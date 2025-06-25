@@ -3807,29 +3807,45 @@ if (rewardMessage) {
     </script>
 
     <script>
-    async function connectWallet() {
-    if (typeof window.ethereum === 'undefined') {
-        showRewardNotification("❌ MetaMask is not installed. Please install MetaMask to connect your wallet.");
-        return;
-    }
-    try {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const account = accounts[0];
-        savedGameData.player.wallet = account;
-        saveAllData();
-        await updatePLAIWalletBalance(); // <-- Add this line
-        document.getElementById('walletMenu').style.display = 'none';
-        if (!savedGameData.player.username) {
-            document.getElementById('usernameMenu').style.display = 'block';
-            document.getElementById('usernameInput').value = '';
-            document.getElementById('usernameError').textContent = '';
-        } else {
-            goHome();
-        }
-    } catch (err) {
-        showRewardNotification("❌ Wallet connection failed: " + (err.message || err));
-    }
-}
+   async function connectWallet() {
+       if (typeof window.ethereum === 'undefined') {
+           showRewardNotification("❌ MetaMask is not installed. Please install MetaMask to connect your wallet.");
+           return;
+       }
+       try {
+           const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+           const account = accounts[0];
+
+           // Check network
+           const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+           if (chainId !== '0x2105') {
+               try {
+                   await window.ethereum.request({
+                       method: 'wallet_switchEthereumChain',
+                       params: [{ chainId: '0x2105' }]
+                   });
+                   showRewardNotification("✅ Switched to Base network!");
+               } catch (switchError) {
+                   showRewardNotification("❌ Please switch to Base network in MetaMask.");
+                   return;
+               }
+           }
+
+           savedGameData.player.wallet = account;
+           saveAllData();
+           await updatePLAIWalletBalance();
+           document.getElementById('walletMenu').style.display = 'none';
+           if (!savedGameData.player.username) {
+               document.getElementById('usernameMenu').style.display = 'block';
+               document.getElementById('usernameInput').value = '';
+               document.getElementById('usernameError').textContent = '';
+           } else {
+               goHome();
+           }
+       } catch (err) {
+           showRewardNotification("❌ Wallet connection failed: " + (err.message || err));
+       }
+   }
     </script>
 
     <script>
@@ -3954,6 +3970,16 @@ if (rewardMessage) {
             }
             return false;
         }
+    }
+    </script>
+
+    <script>
+    if (window.ethereum) {
+        window.ethereum.on('chainChanged', (chainId) => {
+            if (chainId !== '0x2105') {
+                showRewardNotification("⚠️ Please switch to Base network to play!");
+            }
+        });
     }
     </script>
     </body>
