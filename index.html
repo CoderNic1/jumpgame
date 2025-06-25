@@ -904,6 +904,7 @@
         
             </style>
     <script src="https://cdn.jsdelivr.net/npm/@metamask/sdk/dist/metamask-sdk.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 
@@ -1331,6 +1332,32 @@
     </div>
 
     <script>
+const PLAI_TOKEN_ADDRESS = "0x977EA2DDa60C1FdFfd4b0377b036D3871f2d01a9";
+const PLAI_TOKEN_DECIMALS = 6;
+const ERC20_ABI = [
+  "function balanceOf(address owner) view returns (uint256)"
+];
+
+async function updatePLAIWalletBalance() {
+    if (!window.ethereum || !savedGameData.player.wallet) return;
+
+    try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(PLAI_TOKEN_ADDRESS, ERC20_ABI, provider);
+        const rawBalance = await contract.balanceOf(savedGameData.player.wallet);
+        // Convert to human-readable using 6 decimals
+        const balance = ethers.formatUnits(rawBalance, PLAI_TOKEN_DECIMALS);
+
+        // Update in-game display and data
+        savedGameData.player.plai = parseFloat(balance);
+        saveAllData();
+        updateHomeScreen();
+        if (typeof updateShopScreen === "function") updateShopScreen();
+        if (typeof updatePassBalances === "function") updatePassBalances();
+    } catch (err) {
+        console.error("Failed to fetch PLAI balance:", err);
+    }
+}
 
 let savedGameData = {
     player: {
@@ -3751,7 +3778,6 @@ if (rewardMessage) {
 
     <script>
     async function connectWallet() {
-    // Wait for DOMContentLoaded to ensure MetaMask is injected
     if (typeof window.ethereum === 'undefined') {
         alert("MetaMask is not installed. Please install MetaMask to connect your wallet.");
         return;
@@ -3761,6 +3787,7 @@ if (rewardMessage) {
         const account = accounts[0];
         savedGameData.player.wallet = account;
         saveAllData();
+        await updatePLAIWalletBalance(); // <-- Add this line
         document.getElementById('walletMenu').style.display = 'none';
         if (!savedGameData.player.username) {
             document.getElementById('usernameMenu').style.display = 'block';
@@ -3814,6 +3841,21 @@ if (rewardMessage) {
             } catch (e) {
                 // Handle error if needed
             }
+        }
+    });
+    </script>
+
+    <script>
+    function buyPLAI() {
+        // Replace the URL below with your actual buy link if you have one
+        window.open('https://www.base.org/', '_blank');
+    }
+    </script>
+
+    <script>
+    window.addEventListener('DOMContentLoaded', function() {
+        if (savedGameData.player.wallet) {
+            updatePLAIWalletBalance();
         }
     });
     </script>
