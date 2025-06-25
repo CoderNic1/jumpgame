@@ -1257,6 +1257,8 @@
     </ul>
   </div>
   <button onclick="goHome()">🏠 Back to Home</button>
+  <button onclick="disconnectWallet()" class="menu-btn" style="background: linear-gradient(45deg, #FF4444, #FFD700); margin-left: 10px;">
+    🔌 Disconnect Wallet</button>
 </div>
 
 
@@ -2189,20 +2191,20 @@ function updateVaultScreen() {
   	document.getElementById('infoMenu').style.display = 'block';
 	}
         
-        function buyPremium(type) {
+      async function buyPremium(type) {
     if (type === 'clockDrops' && !savedGameData.player.upgrades.clockDropsUnlocked) {
-        if (spendPLAI(100)) {
+        if (await sendPLAI(100)) {
             savedGameData.player.upgrades.clockDropsUnlocked = true;
             updateShopScreen();
         }
     } else if (type === 'magnetPower' && !savedGameData.player.upgrades.magnetPowerUnlocked) {
-        if (spendPLAI(300)) {
+        if (await sendPLAI(300)) {
             savedGameData.player.upgrades.magnetPowerUnlocked = true;
             updateShopScreen();
         }
     } else if (type === 'giftSpeed' && savedGameData.player.upgrades.giftSpeedLevel < savedGameData.player.upgrades.giftSpeedMaxLevel) {
     const cost = Math.floor(500 * Math.pow(1.5, savedGameData.player.upgrades.giftSpeedLevel));
-    if (spendPLAI(cost)) {
+    if (awaitsendPLAI(cost)) {
         savedGameData.player.upgrades.giftSpeedLevel++;
         updateShopScreen();
     		}
@@ -3022,13 +3024,13 @@ if (rewardMessage) {
 
         // --- TASK REROLL & CLAIM ---
 
-        function rerollTask(index, isDaily) {
+        async function rerollTask(index, isDaily) {
             console.log("rerollTask called", index, isDaily);
             const tasks = isDaily ? savedGameData.tasks.daily : savedGameData.tasks.weekly;
             const cost = isDaily ? 10 : 50;
             if (!tasks[index].canReroll || tasks[index].completed) return;
 
-            if (spendPLAI(cost)) {
+            if (await sendPLAI(cost)) {
                 // Replace with a new random task (avoid duplicate types)
                 const usedTypes = tasks.map((t, i) => i === index ? null : t.type).filter(Boolean);
                 tasks[index] = getRandomTask(isDaily, usedTypes);
@@ -3295,7 +3297,7 @@ if (rewardMessage) {
 
         
 
-        function unlockPremium() {
+      async function unlockPremium() {
     const passCost = 1000;
 
     // First, check if the user already has the pass.
@@ -3306,7 +3308,7 @@ if (rewardMessage) {
 
     // Now, attempt to spend the PLAI.
     // The spendPLAI function should return true on success, false on failure.
-    if (spendPLAI(passCost)) {
+    if (await sendPLAI(passCost)) {
         // This code will only run if spendPLAI was successful.
         console.log("Purchase successful! Unlocking premium pass.");
 
@@ -3697,13 +3699,13 @@ if (rewardMessage) {
         });
     }
 
-    function spinWheel() {
+    async function spinWheel() {
         if (isSpinning) return;
 
         if (savedGameData.player.tickets > 0) {
             savedGameData.player.tickets--;
         } else if (savedGameData.player.plai >= 5) {
-            if (!spendPLAI(5)) { // spendPLAI should return true on success
+            if (!await sendPLAI(5)) { // spendPLAI should return true on success
             
                 showRewardNotification("⚠️ Something went wrong with the PLAI transaction.");
                 return;
@@ -3779,7 +3781,7 @@ if (rewardMessage) {
     <script>
     async function connectWallet() {
     if (typeof window.ethereum === 'undefined') {
-        alert("MetaMask is not installed. Please install MetaMask to connect your wallet.");
+        showRewardNotification("❌ MetaMask is not installed. Please install MetaMask to connect your wallet.");
         return;
     }
     try {
@@ -3797,7 +3799,7 @@ if (rewardMessage) {
             goHome();
         }
     } catch (err) {
-        alert("Wallet connection failed: " + (err.message || err));
+        showRewardNotification("❌ Wallet connection failed: " + (err.message || err));
     }
 }
     </script>
@@ -3858,6 +3860,72 @@ if (rewardMessage) {
             updatePLAIWalletBalance();
         }
     });
+    </script>
+
+    <script>
+    function disconnectWallet() {
+        // Remove wallet from saved data
+        if (savedGameData.player.wallet) {
+            delete savedGameData.player.wallet;
+            saveAllData();
+        }
+        // Optionally, show the wallet connect menu again
+        hideAllMenus();
+        document.getElementById('walletMenu').style.display = 'block';
+        // Optionally, update UI to reflect disconnected state
+        updateHomeScreen();
+        showRewardNotification && showRewardNotification("🔌 Wallet disconnected.");
+    }
+    </script>
+
+    <script>
+    async function sendPLAI(amount) {
+        if (!window.ethereum || !savedGameData.player.wallet) {
+            showRewardNotification("❌ Connect your wallet first.");
+            return false;
+        }
+
+        try {
+            // Request user to switch to Base if not already
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x2105' }] // 0x2105 = 8451 = Base Mainnet
+            });
+        } catch (switchError) {
+            showRewardNotification("❌ Please switch to Base network in MetaMask.");
+            return false;
+        }
+
+        try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            const contract = new ethers.Contract(PLAI_TOKEN_ADDRESS, ERC20_ABI, signer);
+
+            // Convert amount to correct decimals (6)
+            const amountInWei = ethers.parseUnits(amount.toString(), PLAI_TOKEN_DECIMALS);
+
+            // Send transaction
+            const tx = await contract.transfer(
+                "0xEce1b63218A249708B521E22BbAA7bAC35F6f20f", // your wallet
+                amountInWei
+            );
+
+            showRewardNotification("⏳ Waiting for transaction confirmation...");
+            await tx.wait();
+
+            showRewardNotification("✅ Payment successful! Thank you.");
+            // Optionally, refresh balance
+            updatePLAIWalletBalance && updatePLAIWalletBalance();
+            return true;
+        } catch (err) {
+            if (err.code === 4001) {
+                showRewardNotification("❌ Transaction rejected by user.");
+            } else {
+                showRewardNotification("❌ Payment failed: " + (err.message || err));
+            }
+            return false;
+        }
+    }
     </script>
     </body>
 </html>
