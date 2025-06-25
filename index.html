@@ -1336,8 +1336,9 @@
             Need PLAI? Buy it on Base and come back to play!
         </p>
         <div style="margin-top: 18px; color: #FF4444; font-size: 0.98em;">
-            <strong>Disclaimer:</strong> This is a test version. No real assets are at risk. Game features and balances may change at any time. There might be bugs and glitches. The Game UI is currently not fully optimized for mobile devices and is being worked on.
-            For any issues or feedback, please contact me at discord by sending me a private message to _nicholoco</a>
+            <strong>Disclaimer:</strong> This is a test version. Game features and balances may change at any time. There might be bugs and glitches. The Game UI is currently not fully optimized for mobile devices and is being worked on.
+            For any issues or feedback, please contact me at discord by sending me a private message to _nicholoco
+        <br><strong>ALL THE TRANSACTIONS DONE IN GAME ARE SEEN AS DONATIONS TO THE DEVELOPER DURING THE BETA TESTING. DO NOT SPEND PLAI IF YOU DON'T WANT TO DONATE.</strong></br>
         </div>
         <div style="margin-top: 18px; color: #aaa; font-size: 0.95em;">
             <span>© 2025 Nicholoco. All rights reserved.<br>
@@ -3942,6 +3943,8 @@ if (rewardMessage) {
             showRewardNotification("✅ Payment successful! Thank you.");
             // Optionally, refresh balance
             updatePLAIWalletBalance && updatePLAIWalletBalance();
+            // Wait 3 seconds before returning true
+            await new Promise(resolve => setTimeout(resolve, 3000));
             return true;
         } catch (err) {
             if (err.code === 4001) {
