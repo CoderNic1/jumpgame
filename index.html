@@ -2178,12 +2178,14 @@ function updateVaultScreen() {
             // Update avatars
             for (let i = 0; i < 4; i++) {
                 const avatar = document.getElementById(`avatar${i}`);
-                avatar.className = 'avatar-option';
-                if (savedGameData.player.upgrades.ownedAvatars.includes(i)) {
-                    avatar.classList.add('owned');
-                }
-                if (savedGameData.player.upgrades.selectedAvatar === i) {
-                    avatar.classList.add('selected');
+                if (avatar) { // Only update if the element exists
+                    avatar.className = 'avatar-option';
+                    if (savedGameData.player.upgrades.ownedAvatars.includes(i)) {
+                        avatar.classList.add('owned');
+                    }
+                    if (savedGameData.player.upgrades.selectedAvatar === i) {
+                        avatar.classList.add('selected');
+                    }
                 }
             }
         }
