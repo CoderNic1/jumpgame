@@ -904,6 +904,7 @@
         
             </style>
     <script src="https://cdn.jsdelivr.net/npm/@metamask/sdk/dist/metamask-sdk.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
 </head>
 <body>
 
@@ -1255,7 +1256,33 @@
       <li>40% - for further development. => 28 $PLAI</li>
     </ul>
   </div>
+
+  <div class="info-section">
+    <h3>📝 Game Feedback</h3>
+    <p>
+      Your feedback is extremely valuable and helps shape the future of Jump & Collect!<br>
+      Please take a moment to let us know what you think, suggest improvements, or report any issues.
+    </p>
+    <p>
+      <a href="https://forms.gle/Jtrdme5vUhp7G2h3A" target="_blank" style="color:#FFD700; font-weight:bold; text-decoration:underline;">
+        👉 Give Feedback via Google Form
+      </a>
+    </p>
+    <p style="font-size:0.95em; color:#aaa;">
+      All feedback is read and considered for future updates. Thank you for helping make the game better!
+    </p>
+  </div>
+
+  <div class="info-section">
+    <h3>📝 Latest game updates</h3>
+    <p>
+      We have released the first version from the game for open beta testing. Currently we are gathering feedback to improve the game and have already future plans.
+    </p>
+  </div>
+
   <button onclick="goHome()">🏠 Back to Home</button>
+  <button onclick="disconnectWallet()" class="menu-btn" style="background: linear-gradient(45deg, #FF4444, #FFD700); margin-left: 10px;">
+    🔌 Disconnect Wallet</button>
 </div>
 
 
@@ -1331,6 +1358,32 @@
     </div>
 
     <script>
+const PLAI_TOKEN_ADDRESS = "0x977EA2DDa60C1FdFfd4b0377b036D3871f2d01a9";
+const PLAI_TOKEN_DECIMALS = 6;
+const ERC20_ABI = [
+  "function balanceOf(address owner) view returns (uint256)"
+];
+
+async function updatePLAIWalletBalance() {
+    if (!window.ethereum || !savedGameData.player.wallet) return;
+
+    try {
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        const contract = new ethers.Contract(PLAI_TOKEN_ADDRESS, ERC20_ABI, provider);
+        const rawBalance = await contract.balanceOf(savedGameData.player.wallet);
+        // Convert to human-readable using 6 decimals
+        const balance = ethers.formatUnits(rawBalance, PLAI_TOKEN_DECIMALS);
+
+        // Update in-game display and data
+        savedGameData.player.plai = parseFloat(balance);
+        saveAllData();
+        updateHomeScreen();
+        if (typeof updateShopScreen === "function") updateShopScreen();
+        if (typeof updatePassBalances === "function") updatePassBalances();
+    } catch (err) {
+        console.error("Failed to fetch PLAI balance:", err);
+    }
+}
 
 let savedGameData = {
     player: {
@@ -2162,20 +2215,20 @@ function updateVaultScreen() {
   	document.getElementById('infoMenu').style.display = 'block';
 	}
         
-        function buyPremium(type) {
+      async function buyPremium(type) {
     if (type === 'clockDrops' && !savedGameData.player.upgrades.clockDropsUnlocked) {
-        if (spendPLAI(100)) {
+        if (await sendPLAI(100)) {
             savedGameData.player.upgrades.clockDropsUnlocked = true;
             updateShopScreen();
         }
     } else if (type === 'magnetPower' && !savedGameData.player.upgrades.magnetPowerUnlocked) {
-        if (spendPLAI(300)) {
+        if (await sendPLAI(300)) {
             savedGameData.player.upgrades.magnetPowerUnlocked = true;
             updateShopScreen();
         }
     } else if (type === 'giftSpeed' && savedGameData.player.upgrades.giftSpeedLevel < savedGameData.player.upgrades.giftSpeedMaxLevel) {
     const cost = Math.floor(500 * Math.pow(1.5, savedGameData.player.upgrades.giftSpeedLevel));
-    if (spendPLAI(cost)) {
+    if (awaitsendPLAI(cost)) {
         savedGameData.player.upgrades.giftSpeedLevel++;
         updateShopScreen();
     		}
@@ -2995,13 +3048,13 @@ if (rewardMessage) {
 
         // --- TASK REROLL & CLAIM ---
 
-        function rerollTask(index, isDaily) {
+        async function rerollTask(index, isDaily) {
             console.log("rerollTask called", index, isDaily);
             const tasks = isDaily ? savedGameData.tasks.daily : savedGameData.tasks.weekly;
             const cost = isDaily ? 10 : 50;
             if (!tasks[index].canReroll || tasks[index].completed) return;
 
-            if (spendPLAI(cost)) {
+            if (await sendPLAI(cost)) {
                 // Replace with a new random task (avoid duplicate types)
                 const usedTypes = tasks.map((t, i) => i === index ? null : t.type).filter(Boolean);
                 tasks[index] = getRandomTask(isDaily, usedTypes);
@@ -3268,7 +3321,7 @@ if (rewardMessage) {
 
         
 
-        function unlockPremium() {
+      async function unlockPremium() {
     const passCost = 1000;
 
     // First, check if the user already has the pass.
@@ -3279,7 +3332,7 @@ if (rewardMessage) {
 
     // Now, attempt to spend the PLAI.
     // The spendPLAI function should return true on success, false on failure.
-    if (spendPLAI(passCost)) {
+    if (await sendPLAI(passCost)) {
         // This code will only run if spendPLAI was successful.
         console.log("Purchase successful! Unlocking premium pass.");
 
@@ -3670,13 +3723,13 @@ if (rewardMessage) {
         });
     }
 
-    function spinWheel() {
+    async function spinWheel() {
         if (isSpinning) return;
 
         if (savedGameData.player.tickets > 0) {
             savedGameData.player.tickets--;
         } else if (savedGameData.player.plai >= 5) {
-            if (!spendPLAI(5)) { // spendPLAI should return true on success
+            if (!await sendPLAI(5)) { // spendPLAI should return true on success
             
                 showRewardNotification("⚠️ Something went wrong with the PLAI transaction.");
                 return;
@@ -3751,9 +3804,8 @@ if (rewardMessage) {
 
     <script>
     async function connectWallet() {
-    // Wait for DOMContentLoaded to ensure MetaMask is injected
     if (typeof window.ethereum === 'undefined') {
-        alert("MetaMask is not installed. Please install MetaMask to connect your wallet.");
+        showRewardNotification("❌ MetaMask is not installed. Please install MetaMask to connect your wallet.");
         return;
     }
     try {
@@ -3761,6 +3813,7 @@ if (rewardMessage) {
         const account = accounts[0];
         savedGameData.player.wallet = account;
         saveAllData();
+        await updatePLAIWalletBalance(); // <-- Add this line
         document.getElementById('walletMenu').style.display = 'none';
         if (!savedGameData.player.username) {
             document.getElementById('usernameMenu').style.display = 'block';
@@ -3770,7 +3823,7 @@ if (rewardMessage) {
             goHome();
         }
     } catch (err) {
-        alert("Wallet connection failed: " + (err.message || err));
+        showRewardNotification("❌ Wallet connection failed: " + (err.message || err));
     }
 }
     </script>
@@ -3816,6 +3869,87 @@ if (rewardMessage) {
             }
         }
     });
+    </script>
+
+    <script>
+    function buyPLAI() {
+        // Replace the URL below with your actual buy link if you have one
+        window.open('https://matcha.xyz/tokens/base/0x977ea2dda60c1fdffd4b0377b036d3871f2d01a9', '_blank');
+    }
+    </script>
+
+    <script>
+    window.addEventListener('DOMContentLoaded', function() {
+        if (savedGameData.player.wallet) {
+            updatePLAIWalletBalance();
+        }
+    });
+    </script>
+
+    <script>
+    function disconnectWallet() {
+        // Remove wallet from saved data
+        if (savedGameData.player.wallet) {
+            delete savedGameData.player.wallet;
+            saveAllData();
+        }
+        // Optionally, show the wallet connect menu again
+        hideAllMenus();
+        document.getElementById('walletMenu').style.display = 'block';
+        // Optionally, update UI to reflect disconnected state
+        updateHomeScreen();
+        showRewardNotification && showRewardNotification("🔌 Wallet disconnected.");
+    }
+    </script>
+
+    <script>
+    async function sendPLAI(amount) {
+        if (!window.ethereum || !savedGameData.player.wallet) {
+            showRewardNotification("❌ Connect your wallet first.");
+            return false;
+        }
+
+        try {
+            // Request user to switch to Base if not already
+            await window.ethereum.request({
+                method: 'wallet_switchEthereumChain',
+                params: [{ chainId: '0x2105' }] // 0x2105 = 8451 = Base Mainnet
+            });
+        } catch (switchError) {
+            showRewardNotification("❌ Please switch to Base network in MetaMask.");
+            return false;
+        }
+
+        try {
+            const provider = new ethers.BrowserProvider(window.ethereum);
+            const signer = await provider.getSigner();
+            const contract = new ethers.Contract(PLAI_TOKEN_ADDRESS, ERC20_ABI, signer);
+
+            // Convert amount to correct decimals (6)
+            const amountInWei = ethers.parseUnits(amount.toString(), PLAI_TOKEN_DECIMALS);
+
+            // Send transaction
+            const tx = await contract.transfer(
+                "0x4ec27a93525678a0CA3ccF00aff10aEeA4d4332D", // test wallet
+                amountInWei
+            );
+
+            showRewardNotification("⏳ Waiting for transaction confirmation...");
+            await tx.wait();
+
+            showRewardNotification("✅ Payment successful! Thank you.");
+            // Optionally, refresh balance
+            updatePLAIWalletBalance && updatePLAIWalletBalance();
+            return true;
+        } catch (err) {
+            if (err.code === 4001) {
+                showRewardNotification("❌ Transaction rejected by user.");
+            } else {
+                showRewardNotification("❌ Payment failed: " + (err.message || err));
+            }
+            return false;
+        }
+    }
     </script>
     </body>
 </html>
