@@ -1,0 +1,3821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jump & Collect Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            /* Removed the background gradient - no longer needed */
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            height: 100vh;
+            width: 100vw;
+            /* Removed the flexbox properties that were commented out */
+        }
+        
+        #gameCanvas {
+            width: 100vw;
+            height: 100vh;
+            max-width: none;
+            max-height: none;
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #32CD32 70%, #228B22 100%);
+            cursor: pointer;
+            border: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: clamp(16px, 5vw, 24px);
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        
+        #timer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: clamp(18px, 6vw, 28px);
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #powerups {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            color: white;
+            font-size: 14px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .menu {
+            position: absolute;
+            top: 15%;
+            left: 15%;
+            right: 15%;
+            bottom: 15%;
+            width: auto;
+            height: auto;
+            margin: 0;
+            border-radius: 30px;
+            color: white;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.8);
+            border: 3px solid #FFD700;
+            max-height: 100%;
+            overflow-y: auto;
+        }
+        
+        #tasksMenu.menu {
+            /* min-width: 500px; */
+            width: auto;
+            min-width: 400px;
+            max-width: 600px;
+            left: 10%;
+            right: 10%;
+            max-height: 80vh;
+        }
+        
+        @media (max-width: 600px) {
+            .menu, #tasksMenu.menu {
+                width: 100vw !important;
+                left: 0 !important;
+                right: 0 !important;
+                top: 0 !important;
+                bottom: 0 !important;
+                min-width: unset !important;
+                max-width: 100vw !important;
+                font-size: 0.95em;
+                padding: 8px 0.5em;
+                border-radius: 0;
+                overflow-x: hidden;
+                box-sizing: border-box;
+            }
+            #tasksMenu.menu {
+                max-height: 98vh;
+            }
+            .button-grid button {
+                min-width: 70px;
+                font-size: 0.9em;
+                padding: 8px 6px;
+            }
+            /* --- Responsive Typography and Layout --- */
+        
+            /* General UI Text */
+            #ui, #timer {
+                font-size: clamp(16px, 7vw, 22px) !important;
+            }
+            #powerups {
+                font-size: clamp(13px, 3.5vw, 18px);
+            }
+        
+            /* Menu Text */
+            .menu h1 {
+                font-size: clamp(20px, 7vw, 32px);
+            }
+            .menu h2 {
+                font-size: clamp(18px, 6vw, 28px);
+            }
+            .menu p {
+                font-size: clamp(15px, 4vw, 20px);
+            }
+            .menu button, .menu-btn {
+                font-size: 4.2vw;
+                padding: 12px 10px;
+            }
+        
+            /* --- Battle Pass Specific Adjustments --- */
+        
+            /* Make the whole pass container use the full width */
+            .battle-pass-container {
+                padding: 0;
+                margin: 0;
+                background: transparent;
+                border: none;
+                box-shadow: none;
+                border-radius: 0;
+                backdrop-filter: none;
+            }
+        
+            /* Adjust pass track padding */
+            .track {
+                padding: 10px;
+            }
+        
+            /* Style for individual reward items within the pass */
+            .reward-grid {
+                gap: 8px; /* Reduce gap between rewards */
+            }
+        
+            .reward {
+                padding: 8px; /* Reduce padding inside each reward */
+                border-radius: 8px; /* Slightly smaller border radius */
+            }
+        
+            .reward-level {
+                font-size: 3.8vw; /* Scale level text */
+                margin-bottom: 5px;
+            }
+        
+            .reward-img {
+                width: 90%; /* Make image slightly smaller than its container */
+                height: auto;
+                margin-bottom: 5px;
+            }
+        
+            .reward-name {
+                font-size: 3.5vw; /* Scale reward name text */
+                line-height: 1.2;
+                font-weight: normal;
+            }
+        
+            /* Ensure the CLAIMED overlay text is readable */
+            .reward .claimed-overlay p {
+                font-size: 4.5vw;
+            }
+            .track-title {
+            font-size: clamp(18px, 6vw, 24px) !important;
+            line-height: 1.1;
+                }
+        }
+        
+        @media (min-width: 1200px) {
+            #tasksMenu.menu {
+                max-width: 900px;
+                left: 20%;
+                right: 20%;
+            }
+        }
+        
+        @media (min-width: 900px) and (max-width: 1199px) {
+            #tasksMenu.menu {
+                max-width: 700px;
+                left: 15%;
+                right: 15%;
+            }
+        }
+        
+        .button-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .button-grid button {
+            flex: 1 1 22%;
+            min-width: 120px;
+            margin: 24px;
+        }
+        
+        .menu h1 {
+            font-size: clamp(1.75rem, 4.5vw, 2.25rem); /* Min, Preferred, Max */
+            margin: 0 0 15px 0;
+            color: #FFD700;
+        }
+        
+        .menu h2 {
+            font-size: clamp(1.4rem, 3.5vw, 1.75rem);
+            margin: 0 0 15px 0;
+            color: #FFD700;
+        }
+        
+        .menu p {
+            font-size: clamp(0.9rem, 2.5vw, 1rem);
+            margin: 8px 0;
+        }
+        
+        .menu button, .menu-btn {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .menu button:hover, .menu-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .menu button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Add hover style for .menu-btn (claim/reroll buttons) */
+        .menu-btn:hover {
+            background: linear-gradient(45deg, #4CAF50, #FFD700);
+            color: #222;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .currency-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(15px, 6vw, 20px) !important;
+            margin: 15px 0;
+        }
+        
+        .coin-icon {
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, #FFD700, #FFA500);
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-block;
+            border: 2px solid #FF8C00;
+        }
+        
+        .plai-icon {
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, #9D4EDD, #7209B7);
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-block;
+            border: 2px solid #5A0F8B;
+        }
+        
+        .stats {
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+        
+        .shop-section {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 2px solid #444;
+        }
+        
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        
+        .shop-item-info {
+            text-align: left;
+            flex-grow: 1;
+        }
+        
+        .shop-item-name {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .shop-item-desc {
+            font-size: 12px;
+            color: #ccc;
+        }
+        
+        .shop-item-price {
+            margin: 0 10px;
+            font-weight: bold;
+        }
+        
+        .avatar-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .avatar-option {
+            width: 60px;
+            height: 60px;
+            border: 3px solid #666;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .avatar-option.selected {
+            border-color: #FFD700;
+        }
+        
+        .avatar-option.owned {
+            border-color: #4CAF50;
+        }
+        
+        .back-button {
+            background: linear-gradient(45deg, #4CAF50, #66BB6A) !important;
+        }
+        
+        /* Removed the duplicate body style that had the background gradient */
+        
+        .battle-pass-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: clamp(15px, 4vw, 30px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: clamp(20px, 5vw, 30px);
+        }
+        
+        .header h1 {
+            font-size: clamp(1.8em, 5vw, 2.5em);
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 10px;
+        }
+        
+        .season-info {
+            font-size: clamp(0.9em, 3vw, 1.1em);
+            opacity: 0.8;
+        }
+        
+        .progress-section {
+            margin-bottom: clamp(25px, 5vw, 40px);
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: clamp(15px, 3vw, 20px);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .level-info {
+            font-size: clamp(1em, 3vw, 1.2em);
+            font-weight: bold;
+        }
+        
+        .xp-info {
+            font-size: clamp(0.8em, 2.5vw, 1em);
+            opacity: 0.8;
+        }
+        
+        .progress-bar-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            height: clamp(25px, 4vw, 30px);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .progress-bar {
+            background: linear-gradient(90deg, #00d4ff, #00a8cc);
+            height: 100%;
+            border-radius: 13px;
+            transition: width 0.3s ease;
+            position: relative;
+            width: 65%;
+        }
+        
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+        
+        .pass-tracks {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(15px, 3vw, 20px);
+        }
+        
+        .track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: clamp(15px, 3vw, 20px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .premium-track {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 237, 78, 0.05));
+        }
+        
+        .track-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: clamp(15px, 3vw, 20px);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .track-title {
+            font-size: clamp(1.1em, 3vw, 1.3em);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .premium-badge {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: clamp(0.7em, 2vw, 0.8em);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .unlock-button {
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #1a1a2e;
+            border: none;
+            padding: clamp(8px, 2vw, 10px) clamp(15px, 3vw, 20px);
+            border-radius: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            font-size: clamp(0.8em, 2.5vw, 1em);
+            white-space: nowrap;
+        }
+        
+        .unlock-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .rewards-container {
+            display: flex;
+            gap: clamp(10px, 2vw, 15px);
+            overflow-x: auto;
+            padding: 10px 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .reward-slot {
+            min-width: clamp(80px, 14vw, 90px);
+            height: clamp(80px, 14vw, 90px);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            padding: 8px;
+        }
+        
+        .reward-slot.unlocked {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: #ffd700;
+            cursor: pointer;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+            to { box-shadow: 0 0 15px rgba(255, 215, 0, 0.8); }
+        }
+        
+        .reward-slot.claimed {
+            background: rgba(0, 255, 0, 0.2);
+            border-color: #00ff00;
+        }
+        
+        .reward-slot.premium-locked {
+            border-color: #ffd700;
+            opacity: 0.6;
+        }
+        
+        .reward-icon {
+            font-size: clamp(1.8em, 4vw, 2.2em);
+            margin-bottom: 4px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .reward-amount {
+            font-size: clamp(0.65em, 1.8vw, 0.75em);
+            opacity: 0.9;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.1;
+        }
+        
+        .claim-effect {
+            position: absolute;
+            inset: -10px;
+            border: 3px solid #00ff00;
+            border-radius: 15px;
+            animation: pulse 1s ease-in-out;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: clamp(20px, 5vw, 40px);
+            margin-top: clamp(20px, 4vw, 30px);
+            padding: clamp(15px, 3vw, 20px);
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: clamp(1.2em, 4vw, 1.5em);
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .stat-label {
+            opacity: 0.8;
+            font-size: clamp(0.8em, 2vw, 0.9em);
+        }
+        
+        /* Balance Section Styles */
+        .balance-section {
+        
+            margin-bottom: clamp(25px, 5vw, 30px);
+        }
+        
+        .balance-container {
+            display: flex;
+            gap: clamp(15px, 3vw, 20px);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .balance-item {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: clamp(15px, 3vw, 20px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            min-width: 140px;
+            transition: all 0.3s ease;
+        }
+        
+        .balance-item:hover {
+            border-color: rgba(255, 215, 0, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .balance-icon {
+            font-size: clamp(1.5em, 4vw, 2em);
+            width: clamp(40px, 8vw, 50px);
+            height: clamp(40px, 8vw, 50px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .balance-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .balance-label {
+            font-size: clamp(0.8em, 2vw, 0.9em);
+            opacity: 0.8;
+            font-weight: 500;
+        }
+        
+        .balance-value {
+            font-size: clamp(1.1em, 3vw, 1.3em);
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .reward-slot.coins { border-color: #ffd700; }
+        .reward-slot.plai { border-color: #9c27b0; }
+        .reward-slot.boost { border-color: #ff5722; }
+        .reward-slot.background { border-color: #2196f3; }
+        .reward-slot.special { border-color: #e91e63; }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            position: relative;
+            max-width: none;
+            max-height: none;
+        }
+        
+        /* Info menu clean boxed style */
+        #infoMenu {
+            text-align: center;
+        }
+        #infoMenu .info-section {
+            background: rgba(0,0,0,0.3);
+            border-radius: 16px;
+            padding: 24px 18px;
+            margin: 18px auto;
+            max-width: 700px;
+            text-align: center;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+        #infoMenu .info-section h3 {
+            text-align: center;
+            margin-top: 0;
+        }
+        #infoMenu ul {
+            text-align: left;
+            margin-left: 1.2em;
+        }
+        #infoMenu .info-section p {
+            margin: 10px 0;
+        }
+        
+        @media (max-width: 600px) {
+            #gameContainer, #gameCanvas {
+                width: 100vw !important;
+                height: 100vh !important;
+                max-width: 100vw !important;
+                max-height: 100vh !important;
+                left: 0 !important;
+                top: 0 !important;
+            }
+            #gameCanvas {
+                display: block;
+                margin: 0 auto;
+            }
+            #ui, #timer, #powerups,
+            .stats, .shop-section, .shop-item, .avatar-option,
+            .track-title, .premium-badge,
+            .balance-item, .reward-slot, .reward-icon, .reward-amount {
+                font-size: 50% !important;
+            }
+            .menu h1, .menu h2 {
+                margin-bottom: 7px !important;
+            }
+            .currency-display, .stats, .shop-section, .shop-item, .avatar-option, .track-title, .balance-item, .reward-slot {
+                padding: 5px !important;
+                margin: 5px 0 !important;
+            }
+            .menu button, .menu-btn, .unlock-button {
+                font-size: 16px !important;
+                padding: 12px 24px !important;
+                border-radius: 8px !important;
+            }
+            .reward-icon {
+                font-size: 2.5rem !important; /* Override for mobile */
+            }
+            .reward-amount {
+                font-size: 0.8rem !important;
+                line-height: 1.2 !important;
+            }
+        }
+        
+        #skinsMenu.menu {
+          max-width: 600px;
+          min-width: 350px;
+          padding: 40px 20px;
+          border-radius: 30px;
+          margin: auto;
+        }
+        
+        #wheelMenu .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+        }
+        
+        #wheelMenu .wheel-pointer {
+            position: absolute;
+            top: -12px; /* Lowered the pointer */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 15px solid transparent;
+            border-right: 15px solid transparent;
+            border-top: 25px solid #FFD700; /* Changed to border-top to point down */
+            z-index: 10;
+        }
+        
+        #wheelMenu #wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid #444;
+            position: relative;
+            overflow: hidden;
+            transition: transform 4s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        
+        #wheelMenu .wheel-segment {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #wheelMenu .segment-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: 0 0;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        #wheelMenu .spin-button {
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+            font-size: 20px;
+            padding: 15px 30px;
+        }
+        
+        #wheelMenu .spin-button:disabled {
+            background: #666;
+        }
+        
+        #wheelMenu #lastPrizeDisplay {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #FFD700;
+            font-weight: bold;
+            min-height: 25px;
+        }
+        
+        #leaderboardTable {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }
+        #leaderboardTable th, #leaderboardTable td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: left;
+        }
+        #leaderboardTable th {
+            color: #FFD700;
+        }
+        .prize-winner {
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.1));
+            font-weight: bold;
+        }
+        
+        .leaderboard-container {
+                margin: 15px 5%;
+                padding: 15px;
+                background: rgba(0,0,0,0.2);
+                border-radius: 15px;
+            }
+        
+                /* ADD THIS NEW CODE */
+        
+            /* For the Gold and PLAI balance text */
+            .balance-label {
+                font-size: clamp(14px, 3vw, 16px);
+            }
+            .balance-value {
+                font-size: clamp(16px, 4vw, 20px);
+            }
+        
+            /* For the footer stats (Current Level, etc.) */
+            .stat-label {
+                font-size: clamp(13px, 3vw, 15px);
+            }
+            .stat-value {
+                font-size: clamp(15px, 4.5vw, 19px);
+            }
+        
+                /* For the Gold and PLAI balance on the main menu and tasks menu */
+            .currency-display {
+                font-size: clamp(16px, 4vw, 18px);
+            }
+        
+            </style>
+    <script src="https://cdn.jsdelivr.net/npm/@metamask/sdk/dist/metamask-sdk.umd.min.js"></script>
+</head>
+<body>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="1100" height="700"></canvas>
+        <div id="ui" style="display: none;">
+            <div>Score: <span id="score">0</span></div>
+            <div>Coins: <span id="coinsThisGame">0</span></div>
+        </div>
+        <div id="timer" style="display: none;">
+            Time: <span id="timeLeft">60</span>s
+        </div>
+        <div id="powerups">
+            <div id="magnetStatus" style="display: none;">🧲 Magnet: <span id="magnetTime">0</span>s</div>
+            <div id="xpBoostStatus" style="display: none;">⚡ XP Boost (x2): <span id="xpBoostTime">0s</span></div>
+            <div id="coinBoostStatus" style="display: none;">🚀 Coin Boost (x1.5): <span id="coinBoostTime">0s</span></div>
+        </div>
+        <!-- Start Menu -->
+        <div id="startMenu" class="menu" style="display: none;">
+            <h1>🦘 Jump & Collect</h1>
+            <div class="currency-display">
+                <div class="coin-icon"></div>
+                <span>Gold: <span id="totalGold">0</span></span>
+                <div class="plai-icon" style="margin-left: 20px;"></div>
+                <span>PLAI: <span id="totalPLAI">0</span></span>
+            </div>
+            <div class="stats">
+                <p>High Score: <span id="highScore">0</span></p>
+                <p>Games Played: <span id="gamesPlayed">0</span></p>
+            </div>
+            <p>Collect coins for 60 seconds!</p>
+            
+
+	<div class="button-grid">
+  		<button onclick="startGame()">🎮 Start</button>
+  		<button onclick="openShop()">🛒 Shop</button>
+  		<button onclick="showLeaderboard()">🏆 Leaderboard</button>
+		<button onclick="showInfo()">ℹ️ Info</button>
+		<button onclick="openSkins()">🎨 Skins</button>
+		<button onclick="openVault()">💰 Game Vault</button>
+  		<button onclick="openJumpPass()">🎫 Jump Pass</button>
+  		<button onclick="openTasks()">📅 Tasks</button>
+	</div>
+
+    <p id="welcomeUser" style="font-size:1.1em; color:#FFD700; margin-top:10px; margin-bottom:0;"></p>
+    <p>Click and jump, collect as much as possible!</p>
+	<p>Make sure to only collect the coins and avoid the spikes.</p>
+        </div>
+        <!-- Battke pass/jump pass menu -->
+        <div id="jumpPassMenu" class="menu" style="display: none;">
+            <div class="battle-pass-container">
+                <div class="header">
+                    <h1>🏆 JUMP PASS 🏆</h1>
+                    <div class="season-info" id="countdown-timer">Calculating remaining time...</div>
+                </div>
+                <!-- User Balance Section -->
+                <div class="balance-section">
+                    <div class="balance-container">
+                        <div class="balance-item">
+                            <div class="coin-icon"></div>
+                            <div class="balance-info">
+                                <div class="balance-label">Coins</div>
+                                <div class="balance-value" id="coin-balance">2,450</div>
+                            </div>
+                        </div>
+                        <div class="balance-item">
+                            <div class="plai-icon"></div>
+                            <div class="balance-info">
+                                <div class="balance-label">$PLAI</div>
+                                <div class="balance-value" id="plai-balance">156.78</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-header">
+                        <div class="level-info" id="progress-level-info">Level 7</div>
+                        <div class="xp-info" id="progress-xp-info">1,300 / 2,000 XP</div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar"></div>
+                    </div>
+                </div>
+                <div class="pass-tracks">
+                    <!-- Premium Track -->
+                    <div class="track premium-track">
+                        <div class="track-header">
+                            <div class="track-title">
+                                ⭐ Premium Pass
+                                <span class="premium-badge">PREMIUM</span>
+                            </div>
+                            <button class="unlock-button">Unlock for 1000 $PLAI</button>
+                        </div>
+                        <div class="rewards-container" id="premium-rewards">
+                            <!-- Premium rewards will be generated here -->
+                        </div>
+                    </div>
+                    <!-- Basic Track -->
+                    <div class="track">
+                        <div class="track-header">
+                            <div class="track-title">🎁 Free Pass</div>
+                        </div>
+                        <div class="rewards-container" id="basic-rewards">
+                            <!-- Basic rewards will be generated here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="stats-current-level">7</div>
+                        <div class="stat-label">Current Level</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="stats-rewards-claimed">4</div>
+                        <div class="stat-label">Rewards Claimed</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="stats-total-rewards">23</div>
+                        <div class="stat-label">Total Rewards</div>
+                    </div>
+                </div>
+                <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
+                <button onclick="openWheelMenu()" class="menu-btn" style="background: linear-gradient(45deg, #9c27b0, #E040FB);">🎡 Spin Wheel</button>
+            </div>
+        </div>
+
+
+    <!-- Game Vault Menu -->
+        <div id="vaultMenu" class="menu" style="display: none;">
+            <h1>💰 Game Vault</h1>
+            <div class="currency-display">
+                <div class="plai-icon"></div>
+                <span>Your PLAI: <span id="vaultUserPLAI">1000</span></span>
+            </div>
+            
+            <div class="stats">
+                <h2>📊 Ecosystem Overview</h2>
+                <p>Total PLAI Spent by All Players: <span id="totalPLAISpent" style="color: #9D4EDD; font-weight: bold;">0</span></p>
+                <p>Developer Share (70%): <span id="developerShare" style="color: #FFD700; font-weight: bold;">0</span></p>
+            </div>
+            
+            <div class="shop-section">
+                <h2>💎 Live Pool Balances</h2>
+                
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <div class="shop-item-name">🏆 Leaderboard Pool</div>
+                        <div class="shop-item-desc">20% of developer share - Weekly prizes for top 10 players</div>
+                    </div>
+                    <div class="shop-item-price">
+                        <div class="plai-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                        <span id="leaderboardPool">0</span>
+                    </div>
+                </div>
+                
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <div class="shop-item-name">🎮 Gameplay Rewards Pool</div>
+                        <div class="shop-item-desc">25% of developer share - Win PLAI by playing games</div>
+                    </div>
+                    <div class="shop-item-price">
+                        <div class="plai-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                        <span id="gameplayPool">0</span>
+                    </div>
+                </div>
+                
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <div class="shop-item-name">🎫 Jump Pass Pool</div>
+                        <div class="shop-item-desc">15% of developer share - Shared among Jump Pass completers</div>
+                    </div>
+                    <div class="shop-item-price">
+                        <div class="plai-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                        <span id="jumpPassPool">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="shop-section">
+                <h2>📈 Your Statistics</h2>
+                <div class="stats">
+                    <p>Your Total PLAI Spent: <span id="userTotalSpent" style="color: #9D4EDD;">0</span></p>
+                    <p>Contribution to Ecosystem: <span id="userContribution">0%</span></p>
+                </div>
+            </div>
+            
+            <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
+                </div>
+            </div>      
+										
+        <!-- Shop Menu -->
+        <div id="shopMenu" class="menu" style="display: none;">
+            <h1>🛒 Shop</h1>
+            <div class="currency-display">
+                <div class="coin-icon"></div>
+                <span>Gold: <span id="shopGold">0</span></span>
+                <div class="plai-icon" style="margin-left: 20px;"></div>
+                <span>PLAI: <span id="shopPLAI">1000</span></span>
+            </div>
+            
+            <div class="shop-section">
+                <h2>💪 Upgrades</h2>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <div class="shop-item-name">Higher Jump</div>
+                        <div class="shop-item-desc">Jump 5% higher - Level <span id="jumpLevel">1/10</span></div>
+                    </div>
+                    <div class="shop-item-price">
+                        <div class="coin-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                        <span id="jumpPrice">50</span>
+                    </div>
+                    <button onclick="buyUpgrade('jump')" id="jumpButton">Buy</button>
+                </div>
+                
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <div class="shop-item-name">Extra Time</div>
+                        <div class="shop-item-desc">Start with +10s - Level <span id="timeLevel">0</span></div>
+                    </div>
+                    <div class="shop-item-price">
+                        <div class="coin-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                        <span id="timePrice">100</span>
+                    </div>
+                    <button onclick="buyUpgrade('time')" id="timeButton">Buy</button>
+                </div>
+            </div>
+            
+                       
+            <div class="shop-section">
+                <h2>💎 Premium Boosters</h2>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <div class="shop-item-name">Clock Drops</div>
+                        <div class="shop-item-desc">Clocks appear every 5-10s, catch for +5s time</div>
+                    </div>
+                    <div class="shop-item-price">
+                        <div class="plai-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                        100
+                    </div>
+                    <button onclick="buyPremium('clockDrops')" id="clockButton">Buy</button>
+                </div>
+                
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <div class="shop-item-name">Magnet Power</div>
+                        <div class="shop-item-desc">Magnets appear, catch to attract items for 10s</div>
+                    </div>
+                    <div class="shop-item-price">
+                        <div class="plai-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                        300
+                    </div>
+                    <button onclick="buyPremium('magnetPower')" id="magnetButton">Buy</button>
+                </div>
+
+	<div class="shop-item">
+    		<div class="shop-item-info">
+        		<div class="shop-item-name">Faster Gifts</div>
+        		<div class="shop-item-desc">Gifts appear 5s faster - Level <span id="giftSpeedLevel">0</span>/5</div>
+    		</div>
+    		<div class="shop-item-price">
+        	<div class="plai-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+		<span id="giftSpeedPrice">500</span> 
+    	</div>
+    	<button onclick="buyPremium('giftSpeed')" id="giftSpeedButton">Buy</button>
+	</div>
+            </div>
+            <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
+        </div>
+
+    <!-- Tasks Menu -->
+    <div id="tasksMenu" class="menu" style="display: none;">
+        <h2>📅 Tasks</h2>
+        <div class="currency-display" style="justify-content: center; margin-bottom: 10px;">
+            <div class="plai-icon"></div>
+            <span>PLAI: <span id="tasksPLAI"></span></span>
+            <span style="margin-left: 20px;">
+                <span style="color:#00FFAA;">XP: <span id="tasksXP"></span></span>
+            </span>
+        </div>
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+          <button id="dailyTab" onclick="switchTaskTab(true)" style="margin-right: 10px;">Daily</button>
+          <button id="weeklyTab" onclick="switchTaskTab(false)">Weekly</button>
+        </div>
+        <div id="tasksList"></div>
+        <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
+    </div>
+
+    <!-- Leaderboard --> 
+    <div id="leaderboardMenu" class="menu" style="display: none;">
+       <h2>🏆 Leaderboard</h2>
+       <div id="leaderboardResetTimer" style="color:#FFD700; font-weight:bold; margin-bottom:8px;"></div>
+       <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+          <button id="currentLbTab" onclick="showLeaderboardPage('current')" style="margin-right: 10px;">Current Week</button>
+          <button id="prevLbTab" onclick="showLeaderboardPage('previous')">Previous Week</button>
+       </div>
+       <div class="leaderboard-container">
+       <table id="leaderboardTable">
+        <thead>
+            <tr>
+                <th>Place</th>
+                <th>Name</th>
+                <th>Points</th>
+                <th>PLAI to Win</th>
+            </tr>
+        </thead>
+        <tbody id="leaderboardBody">
+            <!-- Rows will be inserted here by JavaScript -->
+        </tbody>
+    </table>
+</div>
+       <div id="leaderboardDisclaimer" style="color:#FFD700; font-size:13px; margin-top:10px; text-align:center;"></div>
+       <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
+       <p> The top 10 will win $PLAI tokens at the end of the week. </p>
+    </div>
+
+
+    <!-- Info Menu -->
+    <div id="infoMenu" class="menu" style="display: none;">
+  <h2>ℹ️ How to Play & Credits</h2>
+
+  <div class="info-section">
+    <h3>🎮 How to Play</h3>
+    <p>Click or tap to jump. Collect as many gold coins as possible in 60 seconds. Each coin is worth 10 points. Avoid falling or hitting the spikes.</p>
+    <p>You can use the shop to buy upgrades and customise your game. Play and compete in the leaderboard to win weekly $PLAI tokens.</p>
+  </div>
+
+  <div class="info-section">
+    <h3>👤 Credits</h3>
+    <p>Designed and built by <strong>Nicholoco</strong><br>
+    With a little help from AI ✨<br>
+    Version: 1.1<br>
+    Released: June 2025</p>
+  </div>
+
+  <div class="info-section">
+    <h3>💰 $PLAI Ecosystem</h3>
+    <p>All the $PLAI spend will be used in the following way (from the 70% going to developer):</p>
+    <ul>
+      <li>20% for leaderboard pool.</li>
+      <li>25% for game play pool (win $PLAI by playing).</li>
+      <li>15% for "Jump Pass" shared with everyone reaching the end.</li>
+      <li>40% for developer for further development.</li>
+    </ul>
+    <p>Example when 100 $PLAI is spend:<br>100 * 70% = 70 $PLAI.</p>
+    <ul>
+      <li>20% - leaderboard pool. => 14 $PLAI</li>
+      <li>25% - game play pool. => 17.50 $PLAI</li>
+      <li>15% - "Jump Pass" => 10.50 $PLAI</li>
+      <li>40% - for further development. => 28 $PLAI</li>
+    </ul>
+  </div>
+  <button onclick="goHome()">🏠 Back to Home</button>
+</div>
+
+
+
+    <!-- Game Over Menu -->
+    <div id="gameOverMenu" class="menu" style="display: none;">
+        <h2>⏰ Time's Up!</h2>
+        <div class="stats">
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Coins Collected: <span id="coinsCollected">0</span></p>
+            <p>Gold Earned: <span id="goldEarned">0</span></p>
+            <p id="newRecord" style="color: #FFD700; display: none;">🏆 NEW HIGH SCORE! 🏆</p>
+        </div>
+        <div class="currency-display">
+            <div class="coin-icon"></div>
+            <span>Total Gold: <span id="totalGoldEnd">0</span></span>
+        </div>
+        <button onclick="goHome()">🏠 Home</button>
+        <button onclick="playAgain()">🔄 Play Again</button>
+    </div>
+
+    <!-- Wheel of Fortune Menu -->
+    <div id="wheelMenu" class="menu" style="display: none;">
+        <h1>🎡 Wheel of Fortune</h1>
+        <div class="currency-display">
+            <span>🎟️ Tickets: <span id="wheelTickets">0</span></span>
+            <div class="plai-icon" style="margin-left: 20px;"></div>
+            <span>PLAI: <span id="wheelPLAI">0</span></span>
+        </div>
+        <p>Use a ticket to spin the wheel! No tickets? Spin for 5 PLAI.</p>
+
+        <div class="wheel-container">
+            <div class="wheel-pointer"></div>
+            <div id="wheel">
+                <!-- Segments will be generated by JS -->
+            </div>
+        </div>
+
+        <div id="lastPrizeDisplay"></div>
+        
+        <button onclick="spinWheel()" id="spinButton" class="spin-button">SPIN</button>
+        <button onclick="openJumpPass()" class="back-button">⬅️ Back to Pass</button>
+    </div>
+
+    <div id="walletMenu" class="menu" style="display: block;">
+        <h1>Welcome to Jump & Collect</h1>
+        <button onclick="connectWallet()" class="menu-btn" style="margin: 20px 0 10px 0;">🔗 Connect Wallet</button>
+        <button onclick="buyPLAI()" class="menu-btn" style="background: linear-gradient(45deg, #9D4EDD, #FFD700);">💸 Buy PLAI on Base</button>
+        <p style="margin-top: 24px; color: #FFD700; font-size: 1.1em;">
+            Connect your wallet to start playing and earning rewards.<br>
+            Need PLAI? Buy it on Base and come back to play!
+        </p>
+        <div style="margin-top: 18px; color: #FF4444; font-size: 0.98em;">
+            <strong>Disclaimer:</strong> This is a test version. No real assets are at risk. Game features and balances may change at any time. There might be bugs and glitches. The Game UI is currently not fully optimized for mobile devices and is being worked on.
+            For any issues or feedback, please contact me at discord by sending me a private message to _nicholoco</a>
+        </div>
+        <div style="margin-top: 18px; color: #aaa; font-size: 0.95em;">
+            <span>© 2025 Nicholoco. All rights reserved.<br>
+            Game design &amp; code by Nicholoco.<br>
+            Powered with a little help from AI ✨</span>
+        </div>
+        <p>Username: <span id="playerUsername"></span></p>
+    </div>
+
+    <div id="usernameMenu" class="menu" style="display: none;">
+        <h2>Pick a Username</h2>
+        <p style="color:#FFD700;">This will be used for the leaderboard and cannot be changed later.</p>
+        <input id="usernameInput" type="text" maxlength="16" style="font-size:1.2em; padding:8px; border-radius:6px; border:1px solid #ccc; margin-top:10px;" placeholder="Enter username (min 3 chars)">
+        <div id="usernameError" style="color:#FF4444; margin-top:8px; min-height:20px;"></div>
+        <button onclick="submitUsername()" class="menu-btn" style="margin-top:16px;">Continue</button>
+    </div>
+
+    </div>
+
+    <script>
+
+let savedGameData = {
+    player: {
+        gold: 0,                // BALANCE.gold
+        plai: 0,                // BALANCE.plai
+        tickets: 0,                 // BALANCE.tickets
+        highScore: 0,               // highScore
+        gamesPlayed: 0,             // gamesPlayed
+        totalXP: 0,                 // totalXP
+        upgrades: {                 // upgrades
+      jumpLevel: 1,
+      timeLevel: 0,
+      clockDropsUnlocked: false,
+      magnetPowerUnlocked: false,
+      giftSpeedLevel: 0,
+      giftSpeedMaxLevel: 5,
+      jumpMaxLevel: 10
+    },
+    userItems: {                // userItems
+      unlocked: ['skin_red', 'bg_default', 'fx_none'],
+      selected: { skin: 'skin_red', background: 'bg_default', effect: 'fx_none' }
+    }
+  },
+  activeBoosters: {
+    xp: { multiplier: 1, expires: 0 },
+    coins: { multiplier: 1, expires: 0 }
+  },
+  global: {
+    ecosystemData: {            // ecosystemData
+      totalPLAISpent: 0,
+      userPLAISpent: 0,
+      leaderboardPool: 0,
+      gameplayPool: 1000,
+      jumpPassPool: 0,
+      developerFund: 0
+    },
+    leaderboard: [],            // leaderboard
+    previousLeaderboard: []     // previousLeaderboard
+  },
+  tasks: {
+    daily: [],                  // tasksData.daily
+    weekly: [],                 // tasksData.weekly
+    dailyReset: 0,              // tasksData.dailyReset
+    weeklyReset: 0              // tasksData.weeklyReset
+  },
+  pass: {
+    currentLevel: 1,            // gameData.currentLevel
+    currentXP: 0,             // gameData.currentXP
+    xpToNext: 50,               // gameData.xpToNext
+    premiumUnlocked: false,     // gameData.premiumUnlocked
+    claimedRewards: {
+      basic: [],                // gameData.claimedRewards.basic
+      premium: []               // gameData.claimedRewards.premium
+    }
+    // You may want to add more pass-related data here if needed
+  }
+  // NOTE: The reward definitions (gameData.rewards) are static and can stay outside gameState
+};
+    let metamask, ethereum;
+    if (window.MetaMaskSDK) {
+        metamask = new window.MetaMaskSDK.MetaMaskSDK();
+        ethereum = metamask.getProvider();
+    }
+
+        let showingDailyTasks = true
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI elements
+        const scoreElement = document.getElementById('score');
+        const timeLeftElement = document.getElementById('timeLeft');
+        const coinsThisGameElement = document.getElementById('coinsThisGame');
+        const startMenu = document.getElementById('startMenu');
+        const shopMenu = document.getElementById('shopMenu');
+        const gameOverMenu = document.getElementById('gameOverMenu');
+        const magnetStatus = document.getElementById('magnetStatus');
+        const magnetTime = document.getElementById('magnetTime');
+        
+        // Game states
+        const STATES = {
+            MENU: 0,
+            PLAYING: 1,
+            GAME_OVER: 2,
+            SHOP: 3,
+            LEADERBOARD: 4,
+            VAULT: 5,
+            INFO: 6,
+            WHEEL: 7
+        };
+        
+        let gameState = STATES.MENU;
+        let score = 0;
+        let timeLeft = 60;
+        let baseTime = 60;
+        let gameTimer = null;
+        let coinSpawnTimer = null;
+        let clockSpawnTimer = null;
+        let magnetSpawnTimer = null;
+        let coinsCollectedThisGame = 0;
+	let gifts = [];
+	let giftSpawnTimer = null;
+	const giftSize = 35;
+    let effectParticles = [];
+    let lastBoosterUpdate = 0;
+        
+
+    function getXPForLevel(level) {
+        return 14 + level; // Level 1: 15, Level 2: 16, ..., Level 30: 44
+    }
+    
+        // Wheel of Fortune state
+        let isSpinning = false;
+        let wheelRotation = 0;
+        const wheelSegments = [
+    { type: 'gold', amount: 50, label: '🪙 50' },
+    { type: 'nothing', label: '❌' },
+    { type: 'plai', amount: 1, label: '💎 1' },
+    { type: 'gold', amount: 100, label: '🪙 100' },
+    { type: 'nothing', label: '❌' },
+    { type: 'gold', amount: 25, label: '🪙 25' },
+    { type: 'plai', amount: 2, label: '💎 2' },
+    { type: 'nothing', label: '❌' },
+    { type: 'gold', amount: 150, label: '🪙 150' },
+    { type: 'nothing', label: '❌' },
+    { type: 'plai', amount: 5, label: '💎 5' },
+    { type: 'gold', amount: 75, label: '🪙 75' },
+    { type: 'nothing', label: '❌' },
+    { type: 'gold', amount: 200, label: '🪙 200' },
+    { type: 'plai', amount: 10, label: '💎 10' },
+    { type: 'nothing', label: '❌' },
+    { type: 'gold', amount: 250, label: '🪙 250' },
+    { type: 'nothing', label: '❌' },
+    { type: 'gold', amount: 300, label: '🪙 300' },
+    { type: 'nothing', label: '❌' }
+];
+
+
+    
+
+        const DOM = {
+            basicRewardsContainer: document.getElementById('basic-rewards'),
+            premiumRewardsContainer: document.getElementById('premium-rewards'),
+            coinBalance: document.getElementById('coin-balance'),
+            plaiBalance: document.getElementById('plai-balance'),
+            progressLevelInfo: document.getElementById('progress-level-info'),
+            progressXpInfo: document.getElementById('progress-xp-info'),
+            progressBar: document.querySelector('.progress-bar'),
+            statsCurrentLevel: document.getElementById('stats-current-level'),
+            statsRewardsClaimed: document.getElementById('stats-rewards-claimed'),
+            statsTotalRewards: document.getElementById('stats-total-rewards'),
+            countdownTimer: document.getElementById('countdown-timer'),
+            unlockButton: document.querySelector('.unlock-button')
+        };
+
+
+
+        function saveAllData() {
+            localStorage.setItem('savedGameData', JSON.stringify(savedGameData));
+        }
+        function loadAllData() {
+    const saved = localStorage.getItem('savedGameData');
+    if (saved) {
+        Object.assign(savedGameData, JSON.parse(saved));
+    }
+}
+
+
+        
+
+        // the data for the pass
+        let gameData = {
+
+            // Define different types of rewards
+            rewards: {
+                basic: {
+                    1: { type: 'coins', amount: 25, icon: '🪙' },
+                    2: { type: 'coins', amount: 30, icon: '🪙' },
+                    3: { type: 'coins', amount: 35, icon: '🪙' },
+                    4: { type: 'coins', amount: 40, icon: '🪙' },
+                    5: { type: 'boost', amount: '2x XP', icon: '⚡', duration: '1hr' },
+                    6: { type: 'coins', amount: 50, icon: '🪙' },
+                    7: { type: 'coins', amount: 55, icon: '🪙' },
+                    8: { type: 'ticket', amount: 1, icon: '🎟️' },
+                    9: { type: 'coins', amount: 65, icon: '🪙' },
+                    10: { type: 'boost', amount: '+50% Coins', icon: '🚀', duration: '30min' },
+                    11: { type: 'coins', amount: 75, icon: '🪙' },
+                    12: { type: 'coins', amount: 80, icon: '🪙' },
+                    13: { type: 'ticket', amount: 1, icon: '🎟️' },
+                    14: { type: 'coins', amount: 90, icon: '🪙' },
+                    15: { type: 'boost', amount: '3x XP', icon: '⚡', duration: '45min' },
+                    16: { type: 'coins', amount: 100, icon: '🪙' },
+                    17: { type: 'coins', amount: 105, icon: '🪙' },
+                    18: { type: 'plai', amount: 5, icon: '💎' },
+                    19: { type: 'coins', amount: 115, icon: '🪙' },
+                    20: { type: 'ticket', amount: 1, icon: '🎟️' }
+                },
+                premium: {
+                    1: { type: 'coins', amount: 50, icon: '🪙' },
+                    2: { type: 'plai', amount: 10.0, icon: '💎' },
+                    3: { type: 'background', amount: 'Ocean Theme', icon: '🌊', itemId: 'bg_ocean' },
+                    4: { type: 'boost', amount: '2x Coins', icon: '🚀', duration: '2hrs' },
+                    5: { type: 'plai', amount: 15.5, icon: '💎' },
+                    6: { type: 'background', amount: 'Space Theme', icon: '🌌', itemId: 'bg_space' },
+                    7: { type: 'coins', amount: 200, icon: '🪙' },
+                    8: { type: 'boost', amount: '5x XP', icon: '⚡', duration: '1hr' },
+                    9: { type: 'plai', amount: 25.0, icon: '💎' },
+                    10: { type: 'background', amount: 'Forest Theme', icon: '🌲', itemId: 'bg_forest' },
+                    11: { type: 'coins', amount: 300, icon: '🪙' },
+                    12: { type: 'boost', amount: '3x Coins', icon: '🚀', duration: '3hrs' },
+                    13: { type: 'plai', amount: 35.0, icon: '💎' },
+                    14: { type: 'background', amount: 'Neon Theme', icon: '🔥', itemId: 'bg_neon' },
+                    15: { type: 'coins', amount: 400, icon: '🪙' },
+                    16: { type: 'boost', amount: '10x XP', icon: '⚡', duration: '30min' },
+                    17: { type: 'plai', amount: 45.0, icon: '💎' },
+                    18: { type: 'background', amount: 'Crystal Theme', icon: '💎', itemId: 'bg_crystal' },
+                    19: { type: 'coins', amount: 500, icon: '🪙' },
+                    20: { type: 'ticket', amount: 5, icon: '🎟️' }
+                }
+            }
+        };
+        loadAllData()
+        savedGameData.pass.xpToNext = getXPForLevel(savedGameData.pass.currentLevel);
+
+        function generateRewards() {
+            DOM.basicRewardsContainer.innerHTML = '';
+            DOM.premiumRewardsContainer.innerHTML = '';
+
+            const totalLevels = Object.keys(gameData.rewards.basic).length;
+            for (let level = 1; level <= totalLevels; level++) {
+                const basicReward = createRewardSlot(level, 'basic');
+                DOM.basicRewardsContainer.appendChild(basicReward);
+
+                const premiumReward = createRewardSlot(level, 'premium');
+                DOM.premiumRewardsContainer.appendChild(premiumReward);
+            }
+        }
+
+        // --- TASK SYSTEM ---
+
+// Example task pool (expand as you wish)
+const TASK_POOL = [
+    // Daily tasks (easier)
+    { type: "play_games", isDaily: true, min: 1, max: 3, desc: n => `Play ${n} game${n>1?'s':''}` },
+    { type: "collect_coins", isDaily: true, min: 20, max: 50, desc: n => `Collect ${n} coins` },
+    { type: "collect_clocks", isDaily: true, min: 2, max: 5, desc: n => `Collect ${n} clocks` },
+    { type: "collect_magnets", isDaily: true, min: 1, max: 3, desc: n => `Collect ${n} magnets` },
+    { type: "score_points", isDaily: true, min: 100, max: 300, desc: n => `Score ${n} points in total` },
+    // Weekly tasks (harder)
+    { type: "play_games", isDaily: false, min: 10, max: 20, desc: n => `Play ${n} games` },
+    { type: "collect_coins", isDaily: false, min: 200, max: 500, desc: n => `Collect ${n} coins` },
+    { type: "collect_clocks", isDaily: false, min: 10, max: 20, desc: n => `Collect ${n} clocks` },
+    { type: "collect_magnets", isDaily: false, min: 5, max: 10, desc: n => `Collect ${n} magnets` },
+    { type: "score_points", isDaily: false, min: 2000, max: 5000, desc: n => `Score ${n} points in total` },
+];
+
+
+       // --- TASK SYSTEM: GENERATION, LOADING, RESET ---
+
+       function getNextDailyResetUTC() {
+            const now = new Date();
+            now.setUTCHours(0,0,0,0);
+            return now.getTime() + 24*60*60*1000; // next midnight UTC
+        }
+        function getNextWeeklyResetUTC() {
+            const now = new Date();
+            // Set to next Sunday 00:00 UTC
+            const day = now.getUTCDay();
+            const daysUntilSunday = (7 - day) % 7;
+            now.setUTCHours(0,0,0,0);
+            return now.getTime() + daysUntilSunday*24*60*60*1000;
+        }
+
+        function getRandomTask(isDaily, excludeTypes=[]) {
+            // Filter pool for daily/weekly and not excluded types
+            const pool = TASK_POOL.filter(t => t.isDaily === isDaily && !excludeTypes.includes(t.type));
+            const task = pool[Math.floor(Math.random() * pool.length)];
+            const goal = Math.floor(Math.random() * (task.max - task.min + 1)) + task.min;
+            // XP reward: daily 5-7, weekly 25-40 (all integers)
+            const xp = isDaily
+                ? Math.floor(Math.random() * 3) + 5      // 5, 6, or 7
+                : Math.floor(Math.random() * 16) + 25;   // 25 to 40 inclusive
+            return {
+                id: Math.random().toString(36).substr(2,9),
+                type: task.type,
+                description: task.desc(goal),
+                goal: goal,
+                progress: 0,
+                completed: false,
+                canReroll: true,
+                xp: xp
+            };
+        }
+
+        function generateTasks(isDaily) {
+            const tasks = [];
+            const usedTypes = [];
+            for (let i = 0; i < 3; i++) {
+                const t = getRandomTask(isDaily, usedTypes);
+                usedTypes.push(t.type);
+                tasks.push(t);
+            }
+            return tasks;
+        }
+
+
+        function resetTasksIfNeeded() {
+            const now = Date.now();
+            let changed = false;
+            if (!savedGameData.tasks.dailyReset || now > savedGameData.tasks.dailyReset) {
+                savedGameData.tasks.daily= generateTasks(true);
+                savedGameData.tasks.dailyReset = getNextDailyResetUTC();
+                changed = true;
+            }
+            if (!savedGameData.global.previousLeaderboard || now > savedGameData.global.previousLeaderboard) {
+                savedGameData.tasks.weekly = generateTasks(false);
+                savedGameData.global.previousLeaderboard = getNextWeeklyResetUTC();
+                changed = true;
+            }
+
+        }
+
+        function getNextLeaderboardResetUTC() {
+        const now = new Date();
+        const day = now.getUTCDay();
+        const daysUntilSunday = (7 - day) % 7;
+        now.setUTCHours(0,0,0,0);
+        return now.getTime() + daysUntilSunday*24*60*60*1000;
+    }
+    
+        function loadLeaderboardReset() {
+        let reset = localStorage.getItem("leaderboardReset");
+        if (!reset) {
+            reset = getNextLeaderboardResetUTC();
+            localStorage.setItem("leaderboardReset", reset);
+        }
+        return parseInt(reset);
+    }
+
+    function saveLeaderboardReset(ts) {
+        localStorage.setItem("leaderboardReset", ts);
+    }
+    
+        function resetLeaderboardIfNeeded() {
+        const now = Date.now();
+        let resetTime = loadLeaderboardReset();
+        if (now > resetTime) {
+            // Distribute rewards (future: send PLAI, for now: just log)
+            let leaderboard = savedGameData.global.leaderboard || [];
+            savedGameData.global.leaderboard = savedGameData.global.leaderboard.slice(0, 20); // Top 20 for previous week
+            const totalReward = Math.floor(savedGameData.global.ecosystemData.leaderboardPool * 0.5);
+            let prevWeek = [];
+            if (savedGameData.global.leaderboard.length > 0 && totalReward > 0) {
+                // Reward distribution for top 10 (example: 1st 25%, 2nd 18%, 3rd 13%, 4th 10%, 5th 8%, 6th 7%, 7th 6%, 8th 5%, 9th 4%, 10th 4%)
+                const rewards = [0.25, 0.18, 0.13, 0.10, 0.08, 0.07, 0.06, 0.05, 0.04, 0.04];
+                savedGameData.global.leaderboard.forEach((entry, i) => {
+                    let reward = 0;
+                    if (i < 10) reward = Math.floor(totalReward * rewards[i]);
+                    prevWeek.push({ name: entry.name, score: entry.score, reward });
+                    if (reward > 0) {
+                        console.log(`Would reward ${entry.name} with ${reward} PLAI`);
+                    }
+                });
+                savedGameData.global.ecosystemData.leaderboardPool -= totalReward;
+            } else {
+                savedGameData.global.leaderboard.forEach(entry => prevWeek.push({ name: entry.name, score: entry.score, reward: 0 }));
+            }
+            // Save previous week leaderboard
+            savedGameData.global.previousLeaderboard = prevWeek;
+            // Reset leaderboard
+            savedGameData.global.leaderboard = [];
+            // Set next reset
+            savedGameData.global.previousLeaderboardReset = getNextLeaderboardResetUTC();
+            saveLeaderboardReset(resetTime);
+        }
+    }
+
+        // Call this once at game start:
+
+        resetTasksIfNeeded();
+        resetLeaderboardIfNeeded()
+
+        
+        // Power-ups
+        let magnetActive = false;
+        let magnetTimeLeft = 0;
+        let magnetTimer = null;
+        
+        // Avatar colors
+        const avatarColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96E6A1'];
+
+        // Player object
+        const player = {
+            x: 100,
+            y: 400,
+            width: 40,
+            height: 40,
+            velocityY: 0,
+            onGround: false,
+            jumpPower: -15,
+            gravity: 0.8
+        };
+
+        // Game objects
+        let coins = [];
+        let clocks = [];
+        let magnets = [];
+	let clouds = [];
+        const coinSize = 25;
+        const powerUpSize = 30;
+        let groundY = canvas.height * 0.65; // 65% down the canvas
+	let spikes = [];
+	let spikeSpawnTimer = null;
+	const spikeSize = 30;
+	let spikeHitMessage = null; // For showing hit message
+	let rewardMessage = null;
+
+
+        function initGame() {
+            window.addEventListener('load', fixCanvasScaling);
+            window.addEventListener('resize', fixCanvasScaling);
+            score = 0;
+            baseTime = 60 + (savedGameData.player.upgrades.timeLevel * 10);
+            timeLeft = baseTime;
+            coinsCollectedThisGame = 0;
+            coins = [];
+            clocks = [];
+            magnets = [];
+	    spikes = [];
+	    gifts = [];
+	    spikeHitMessage = null;
+            magnetActive = false;
+            magnetTimeLeft = 0;
+            magnetStatus.style.display = 'none';
+
+            
+            // Apply jump upgrade
+            player.jumpPower = -15 - (savedGameData.player.upgrades.jumpLevel - 1) * 0.75; // 5% increase per level
+            
+            // Reset player position
+            player.x = 100;
+            player.y = groundY - player.height;
+            player.velocityY = 0;
+            player.onGround = true;
+            
+            updateUI();
+        }
+        
+        function updateUI() {
+            scoreElement.textContent = score;
+            timeLeftElement.textContent = timeLeft;
+            coinsThisGameElement.textContent = coinsCollectedThisGame;
+            if (gameState === STATES.PLAYING) {
+                document.getElementById('ui').style.display = 'block';
+                document.getElementById('timer').style.display = 'block';
+            } else {
+                document.getElementById('ui').style.display = 'none';
+                document.getElementById('timer').style.display = 'none';
+            }
+        }
+
+        function startGame() {
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('timer').style.display = 'block';
+            gameState = STATES.PLAYING;
+            hideAllMenus();
+            applySelectedBackground();
+	    spikeSpawnTimer = setInterval(() => {
+            createSpike();
+            }, Math.random() * 7000 + 3000);
+            initGame();
+            updateUI(); // Ensure UI is shown
+            
+            // Start timer
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timeLeftElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            // Start spawning
+            coinSpawnTimer = setInterval(createCoin, 1500);
+            
+            if (savedGameData.player.upgrades.clockDropsUnlocked) {
+                clockSpawnTimer = setInterval(createClock, Math.random() * 5000 + 5000);
+            }
+            
+            if (savedGameData.player.upgrades.magnetPowerUnlocked) {
+                magnetSpawnTimer = setInterval(createMagnet, Math.random() * 8000 + 12000);
+            }
+	    // Start gift spawning
+	    const giftSpawnInterval = Math.max(20000, 60000 - (savedGameData.player.upgrades.giftSpeedLevel * 5000)); // 60s base, -5s per level, min 20s
+	    giftSpawnTimer = setInterval(createGift, giftSpawnInterval);
+        }
+
+        function endGame() {
+            if (savedGameData.player.username) {
+                saveHighScore(savedGameData.player.username, score);
+            }
+
+            // Update stats
+            savedGameData.player.gamesPlayed++;
+            const isNewRecord = score > savedGameData.player.highScore;
+            if (isNewRecord) {
+                savedGameData.player.highScore = score;
+            }
+
+            gameState = STATES.GAME_OVER;
+            updateUI(); // Hide UI immediately after game ends
+            clearInterval(gameTimer);
+            clearInterval(coinSpawnTimer);
+	    if (spikeSpawnTimer) clearInterval(spikeSpawnTimer);
+            if (clockSpawnTimer) clearInterval(clockSpawnTimer);
+            if (magnetSpawnTimer) clearInterval(magnetSpawnTimer);
+            if (magnetTimer) clearInterval(magnetTimer);
+	    if (giftSpawnTimer) clearInterval(giftSpawnTimer);
+            
+            // Calculate results
+            checkActiveBoosters();
+            const goldEarnedBase = Math.floor(score / 10);
+            const goldEarned = Math.round(goldEarnedBase * savedGameData.activeBoosters.coins.multiplier);
+            savedGameData.player.gold += goldEarned;
+            
+            // Update game over screen
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('coinsCollected').textContent = coinsCollectedThisGame;
+            document.getElementById('goldEarned').textContent = goldEarned;
+            document.getElementById('totalGoldEnd').textContent = savedGameData.player.gold;
+            document.getElementById('newRecord').style.display = isNewRecord ? 'block' : 'none';
+            
+            document.getElementById('ui').style.display = 'none';
+            document.getElementById('timer').style.display = 'none';
+            gameOverMenu.style.display = 'block';
+
+            // Update task progress
+            updateAllTasksProgress("play_games", 1);
+            updateAllTasksProgress("score_points", score);
+            updateUI(); // Ensure UI is hidden
+
+            saveAllData(); // <-- Save after all updates!
+        }
+
+        function goHome() {
+            hideAllMenus();
+            document.getElementById('startMenu').style.display = 'block';
+            updateHomeScreen();
+            updateUI(); // Hide UI when returning home
+            applySelectedBackground();
+        }
+
+        function saveHighScore(name, score) {
+            let leaderboard = savedGameData.global.leaderboard || [];
+            // Find if the user already exists
+            const existing = leaderboard.find(entry => entry.name === name);
+            if (existing) {
+                // Only update if the new score is higher
+                if (score > existing.score) {
+                    existing.score = score;
+                }
+            } else {
+                leaderboard.push({ name, score });
+            }
+            // Sort scores in descending order
+            leaderboard.sort((a, b) => b.score - a.score);
+            // Limit to top 20 scores
+            savedGameData.global.leaderboard = leaderboard.slice(0, 20);
+            saveAllData();
+        }
+
+        function updateLeaderboardResetTimer() {
+            let reset = localStorage.getItem("leaderboardReset");
+            if (!reset) {
+                reset = getNextLeaderboardResetUTC();
+                localStorage.setItem("leaderboardReset", reset);
+            }
+            reset = parseInt(reset);
+            const now = Date.now();
+            let timeLeft = Math.max(0, Math.floor((reset - now) / 1000));
+            let hours = Math.floor(timeLeft / 3600);
+            let mins = Math.floor((timeLeft % 3600) / 60);
+            let secs = timeLeft % 60;
+            let resetText = `Resets in: ${hours}h ${mins}m ${secs}s`;
+            document.getElementById('leaderboardResetTimer').textContent = resetText;
+        }
+
+        let leaderboardTimerInterval = null;
+
+// ... existing code ...
+function showLeaderboardPage(page) {
+            const leaderboardBody = document.getElementById('leaderboardBody');
+            document.getElementById('currentLbTab').style.background = page === 'current' ? '#FFD700' : '';
+            document.getElementById('prevLbTab').style.background = page === 'previous' ? '#FFD700' : '';
+            leaderboardBody.innerHTML = "";
+            
+            const disclaimer = document.getElementById('leaderboardDisclaimer');
+            if (page === 'current') {
+                let leaderboard = savedGameData.global.leaderboard || [];
+                const pool = savedGameData.global.ecosystemData?.leaderboardPool || 0;
+                const totalReward = Math.floor(pool * 0.5);
+                const rewardsDist = [0.25, 0.18, 0.13, 0.10, 0.08, 0.07, 0.06, 0.05, 0.04, 0.04];
+                
+                savedGameData.global.leaderboard.forEach((entry, index) => {
+                    const row = document.createElement('tr');
+                    let plaiToWin = 0;
+
+                    if (index < 10) {
+                        row.classList.add('prize-winner');
+                        if (totalReward > 0) {
+                            plaiToWin = Math.floor(totalReward * rewardsDist[index]);
+                        }
+                    }
+
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${entry.name}</td>
+                        <td>${entry.score}</td>
+                        <td>${plaiToWin > 0 ?  plaiToWin : '-'}</td>
+                    `;
+                    leaderboardBody.appendChild(row);
+                });
+
+                if (savedGameData.global.leaderboard.length === 0) {
+                    leaderboardBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No scores yet for this week.</td></tr>';
+                }
+                disclaimer.textContent = 'Rewards are an estimation based on the current pool and may change.';
+            } else { // Previous week
+                let prev = savedGameData.global.previousLeaderboard || [];
+                if (!Array.isArray(prev)) prev = [];
+                prev.forEach((entry, index) => {
+                    const row = document.createElement('tr');
+                    if (index < 10) {
+                        row.classList.add('prize-winner');
+                    }
+                    row.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td>${entry.name}</td>
+                        <td>${entry.score}</td>
+                        <td>${entry.reward > 0 ? entry.reward : '-'}</td>
+                    `;
+                    leaderboardBody.appendChild(row);
+                });
+
+                if (prev.length === 0) {
+                    leaderboardBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No previous week data yet.</td></tr>';
+                }
+                disclaimer.textContent = '';
+            }
+        }
+
+
+        function showLeaderboard() {
+           gameState = STATES.LEADERBOARD;
+           hideAllMenus();
+           showLeaderboardPage('current');
+           document.getElementById('leaderboardMenu').style.display = 'block';
+           updateLeaderboardResetTimer();
+           if (leaderboardTimerInterval) clearInterval(leaderboardTimerInterval);
+           leaderboardTimerInterval = setInterval(updateLeaderboardResetTimer, 1000);
+        }
+
+        function openVault() {
+            gameState = STATES.VAULT;
+            hideAllMenus();
+            vaultMenu.style.display = 'block';
+            updateVaultScreen();
+        }        
+
+
+	// Function to handle PLAI spending and update ecosystem pools
+	function spendPLAI(amount) {
+    	if (savedGameData.player.plai >= amount) {
+            savedGameData.player.plai -= amount;
+        
+        // Update ecosystem tracking
+        savedGameData.global.ecosystemData.totalPLAISpent += amount;
+        savedGameData.global.ecosystemData.userPLAISpent += amount;
+        
+        // Calculate developer share (70%)
+        const developerShare = amount * 0.7;
+        
+        // Distribute developer share to pools
+        savedGameData.global.ecosystemData.leaderboardPool += developerShare * 0.20;    // 20% of dev share
+        savedGameData.global.ecosystemData.gameplayPool += developerShare * 0.25;       // 25% of dev share
+        savedGameData.global.ecosystemData.jumpPassPool += developerShare * 0.15;       // 15% of dev share
+        savedGameData.global.ecosystemData.developerFund += developerShare * 0.40;      // 40% of dev share (not shown)
+        
+        saveAllData(); // <--- Move here!
+        return true;
+    		}
+    	return false;
+	}
+	
+    function fixCanvasScaling() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    groundY = canvas.height * 0.65;
+    player.y = groundY - player.height;
+    // ...update other positions as needed...
+}
+
+function updateVaultScreen() {
+    // Update user PLAI balance
+    document.getElementById('vaultUserPLAI').textContent = savedGameData.player.plai;
+    
+    // Update ecosystem totals
+    document.getElementById('totalPLAISpent').textContent = savedGameData.global.ecosystemData.totalPLAISpent;
+    document.getElementById('developerShare').textContent = Math.floor(savedGameData.global.ecosystemData.totalPLAISpent * 0.7);
+    
+    // Update pool balances
+    document.getElementById('leaderboardPool').textContent = Math.floor(savedGameData.global.ecosystemData.leaderboardPool);
+    document.getElementById('gameplayPool').textContent = Math.floor(savedGameData.global.ecosystemData.gameplayPool);
+    document.getElementById('jumpPassPool').textContent = Math.floor(savedGameData.global.ecosystemData.jumpPassPool);
+    
+    // Update user statistics
+    document.getElementById('userTotalSpent').textContent = savedGameData.global.ecosystemData.userPLAISpent;
+    const userContribution = savedGameData.global.ecosystemData.totalPLAISpent > 0 ? 
+        ((savedGameData.global.ecosystemData.userPLAISpent / savedGameData.global.ecosystemData.totalPLAISpent) * 100).toFixed(1) : '0';
+    document.getElementById('userContribution').textContent = userContribution + '%';
+}
+        function openShop() {
+            gameState = STATES.SHOP;
+            hideAllMenus();
+            shopMenu.style.display = 'block';
+            updateShopScreen();
+        }
+        
+        function hideAllMenus() {
+            document.getElementById('walletMenu').style.display = 'none';
+            startMenu.style.display = 'none';
+            shopMenu.style.display = 'none';
+            gameOverMenu.style.display = 'none';
+            leaderboardMenu.style.display = 'none';
+            infoMenu.style.display = 'none';
+            vaultMenu.style.display = 'none';
+            tasksMenu.style.display = 'none';
+            skinsMenu.style.display = 'none';
+            document.getElementById('wheelMenu').style.display = 'none';
+            document.getElementById('jumpPassMenu').style.display = 'none';
+        }
+        
+        function updateHomeScreen() {
+            document.getElementById('totalGold').textContent = savedGameData.player.gold;
+            document.getElementById('totalPLAI').textContent = savedGameData.player.plai;
+            document.getElementById('highScore').textContent = savedGameData.player.highScore;
+            document.getElementById('gamesPlayed').textContent = savedGameData.player.gamesPlayed;
+            document.getElementById('playerUsername').textContent = savedGameData.player.username || '';
+            document.getElementById('welcomeUser').textContent =
+                savedGameData.player.username ? `Welcome ${savedGameData.player.username}!` : '';
+            if (savedGameData.player.wallet) {
+                document.getElementById('welcomeUser').textContent =
+                    `Welcome ${savedGameData.player.username}! Wallet: ${savedGameData.player.wallet.slice(0,6)}...${savedGameData.player.wallet.slice(-4)}`;
+            } else {
+                document.getElementById('welcomeUser').textContent =
+                    savedGameData.player.username ? `Welcome ${savedGameData.player.username}!` : '';
+            }
+        }
+        
+        function updateShopScreen() {
+            document.getElementById('shopGold').textContent = savedGameData.player.gold;
+            document.getElementById('shopPLAI').textContent = savedGameData.player.plai;
+            
+            // Update upgrade displays
+            const jumpMax = savedGameData.player.upgrades.jumpMaxLevel || 10;
+            document.getElementById('jumpLevel').textContent = `${savedGameData.player.upgrades.jumpLevel}/${jumpMax}`;
+            const jumpPrice = Math.ceil(50 * Math.pow(savedGameData.player.upgrades.jumpLevel, 1.5));
+            document.getElementById('jumpPrice').textContent = jumpPrice;
+            const jumpOwned = savedGameData.player.upgrades.jumpLevel >= jumpMax;
+            document.getElementById('jumpButton').disabled = jumpOwned || savedGameData.player.gold < jumpPrice;
+            document.getElementById('jumpButton').textContent = jumpOwned ? 'Owned' : 'Buy';
+            
+            document.getElementById('timeLevel').textContent = savedGameData.player.upgrades.timeLevel;
+            document.getElementById('timePrice').textContent = (savedGameData.player.upgrades.timeLevel + 1) * 100;
+            document.getElementById('timeButton').disabled = savedGameData.player.gold < (savedGameData.player.upgrades.timeLevel + 1) * 100;
+            
+            // Update premium buttons
+            document.getElementById('clockButton').disabled = savedGameData.player.upgrades.clockDropsUnlocked || savedGameData.player.plai < 100;
+            document.getElementById('clockButton').textContent = savedGameData.player.upgrades.clockDropsUnlocked ? 'Owned' : 'Buy';
+            
+            document.getElementById('magnetButton').disabled = savedGameData.player.upgrades.magnetPowerUnlocked || savedGameData.player.plai < 300;
+            document.getElementById('magnetButton').textContent = savedGameData.player.upgrades.magnetPowerUnlocked ? 'Owned' : 'Buy';
+
+	    // Update gift speed button
+	    const giftSpeedCost = Math.floor(500 * Math.pow(1.5, savedGameData.player.upgrades.giftSpeedLevel));
+	    document.getElementById('giftSpeedLevel').textContent = savedGameData.player.upgrades.giftSpeedLevel;
+	    document.getElementById('giftSpeedPrice').textContent = giftSpeedCost;
+
+	    document.getElementById('giftSpeedButton').disabled = savedGameData.player.upgrades.giftSpeedLevel >= savedGameData.player.upgrades.giftSpeedMaxLevel || (savedGameData.player.plai+1) < giftSpeedCost;
+	    document.getElementById('giftSpeedButton').textContent = savedGameData.player.upgrades.giftSpeedLevel >= (savedGameData.player.upgrades.giftSpeedMaxLevel) ? 'Owned' : 'Buy';
+            
+            // Update avatars
+            for (let i = 0; i < 4; i++) {
+                const avatar = document.getElementById(`avatar${i}`);
+                avatar.className = 'avatar-option';
+                if (savedGameData.player.upgrades.ownedAvatars.includes(i)) {
+                    avatar.classList.add('owned');
+                }
+                if (savedGameData.player.upgrades.selectedAvatar === i) {
+                    avatar.classList.add('selected');
+                }
+            }
+        }
+        
+        function buyUpgrade(type) {
+
+            if (type === 'jump') {
+                const jumpMax = savedGameData.player.upgrades.jumpMaxLevel || 10;
+                if (savedGameData.player.upgrades.jumpLevel >= jumpMax) return;
+                const cost = Math.ceil(50 * Math.pow(savedGameData.player.upgrades.jumpLevel, 1.5));
+                if (savedGameData.player.gold >= cost) {
+                    savedGameData.player.gold -= cost;
+                    savedGameData.player.upgrades.jumpLevel++;
+                    updateShopScreen();
+                }
+            } else if (type === 'time') {
+                const cost = (savedGameData.player.upgrades.timeLevel + 1) * 100;
+                if (savedGameData.player.gold >= cost) {
+                    savedGameData.player.gold -= cost;
+                    savedGameData.player.upgrades.timeLevel++;
+                    updateShopScreen();
+                }
+            }
+            saveAllData()
+        }
+
+	function showInfo() {
+  	hideAllMenus();
+  	document.getElementById('infoMenu').style.display = 'block';
+	}
+        
+        function buyPremium(type) {
+    if (type === 'clockDrops' && !savedGameData.player.upgrades.clockDropsUnlocked) {
+        if (spendPLAI(100)) {
+            savedGameData.player.upgrades.clockDropsUnlocked = true;
+            updateShopScreen();
+        }
+    } else if (type === 'magnetPower' && !savedGameData.player.upgrades.magnetPowerUnlocked) {
+        if (spendPLAI(300)) {
+            savedGameData.player.upgrades.magnetPowerUnlocked = true;
+            updateShopScreen();
+        }
+    } else if (type === 'giftSpeed' && savedGameData.player.upgrades.giftSpeedLevel < savedGameData.player.upgrades.giftSpeedMaxLevel) {
+    const cost = Math.floor(500 * Math.pow(1.5, savedGameData.player.upgrades.giftSpeedLevel));
+    if (spendPLAI(cost)) {
+        savedGameData.player.upgrades.giftSpeedLevel++;
+        updateShopScreen();
+    		}
+	}
+}
+        
+        function selectAvatar(index) {
+            if (savedGameData.player.upgrades.ownedAvatars.includes(index)) {
+                savedGameData.player.upgrades.selectedAvatar = index;
+                updateShopScreen();
+            }
+        }
+        
+        function selectOrBuyAvatar(index) {
+            if (savedGameData.player.upgrades.ownedAvatars.includes(index)) {
+                selectAvatar(index);
+            } else if (savedGameData.player.gold >= 75) {
+                savedGameData.player.gold -= 75;
+                savedGameData.player.upgrades.ownedAvatars.push(index);
+                savedGameData.player.upgrades.selectedAvatar = index;
+                updateShopScreen();
+            }
+        }
+
+        function playAgain() {
+            hideAllMenus();
+            startGame();
+        }
+
+        function createCoin() {
+            if (gameState === STATES.PLAYING) {
+                coins.push({
+                    x: canvas.width + Math.random() * 100,
+                    y: Math.random() * 200 + 150,
+                    collected: false,
+                    pulse: 0
+                });
+            }
+        }
+
+        
+        function createClock() {
+            if (gameState === STATES.PLAYING && savedGameData.player.upgrades.clockDropsUnlocked) {
+                clocks.push({
+                    x: canvas.width + Math.random() * 100,
+                    y: Math.random() * 150 + 100,
+                    collected: false,
+                    rotation: 0
+                });
+            }
+        }
+        
+        function createMagnet() {
+            if (gameState === STATES.PLAYING && savedGameData.player.upgrades.magnetPowerUnlocked) {
+                magnets.push({
+                    x: canvas.width + Math.random() * 100,
+                    y: Math.random() * (canvas.height * 0.3) + (canvas.height * 0.2),
+                    collected: false,
+                    pulse: 0
+                });
+            }
+        }
+
+	function createSpike() {
+    		if (gameState === STATES.PLAYING) {
+       			spikes.push({
+            		x: canvas.width + Math.random() * 100,
+            		y: groundY - spikeSize,
+            		hit: false,
+            		speed: 2 + Math.random() * 2 // Speed between 2-4
+        			});
+    			}
+		}
+
+	function createGift() {
+    		if (gameState === STATES.PLAYING) {
+        		gifts.push({
+            		x: canvas.width + Math.random() * 100,
+            		y: Math.random() * 200 + 100,
+            		collected: false,
+            		float: 0,
+            		sparkle: 0
+        		});
+    		}
+	}
+        
+        function activateMagnet() {
+            magnetActive = true;
+            magnetTimeLeft = 10;
+            magnetStatus.style.display = 'block';
+            
+            magnetTimer = setInterval(() => {
+                magnetTimeLeft--;
+                magnetTime.textContent = magnetTimeLeft;
+                
+                if (magnetTimeLeft <= 0) {
+                    magnetActive = false;
+                    magnetStatus.style.display = 'none';
+                    clearInterval(magnetTimer);
+                }
+            }, 1000);
+        }
+
+	function processGiftReward() {
+    		const plaiChance = Math.random() < 0.2; // 20% chance for PLAI
+    		const plaiReward = Math.floor(Math.random() * 5) + 1; // 1-5 PLAI
+    
+    		if (plaiChance && savedGameData.global.ecosystemData.gameplayPool >= plaiReward) {
+        		// Award PLAI
+        		savedGameData.player.plai += plaiReward;
+        		savedGameData.global.ecosystemData.gameplayPool -= plaiReward;
+        
+        		// Show reward message
+        		showRewardMessage(`+${plaiReward} PLAI!`, '#9D4EDD');
+        		return;
+    			}
+    
+    		// Award coins instead
+    		const coinReward = Math.floor(Math.random() * 3) + 1; // 1-3 coins
+    		coinsCollectedThisGame += coinReward;
+    		updateUI();
+    		showRewardMessage(`+${coinReward} coins!`, '#FFD700');
+		}
+
+		function showRewardMessage(text, color) {
+    		// Create floating reward message (similar to spike hit message)
+    		rewardMessage = {
+        		text: text,
+        		x: player.x,
+        		y: player.y - 40,
+        		opacity: 1,
+        		timer: 0,
+        		color: color
+    		};
+	}
+
+		function initClouds() {
+    		clouds = [];
+    		// Create initial clouds at different positions
+    		for (let i = 0; i < 5; i++) {
+        		clouds.push({
+            		x: Math.random() * (canvas.width + 200) - 100,
+            		y: 60 + Math.random() * 100,
+            		size: 20 + Math.random() * 15,
+            		speed: 0.5 + Math.random() * 1.5,
+            		opacity: 0.6 + Math.random() * 0.4
+        		});
+    		}
+	}
+
+		function updateClouds() {
+    		clouds.forEach(cloud => {
+        		cloud.x -= cloud.speed;
+        
+        		// Reset cloud position when it goes off screen
+        		if (cloud.x < -100) {
+            		cloud.x = canvas.width + Math.random() * 200;
+            		cloud.y = 60 + Math.random() * 100;
+            		cloud.size = 20 + Math.random() * 15;
+            		cloud.speed = 0.5 + Math.random() * 1.5;
+            		cloud.opacity = 0.6 + Math.random() * 0.4;
+        		}
+    		});
+	}
+
+		function drawClouds() {
+    		clouds.forEach(cloud => {
+        		ctx.save();
+        	ctx.globalAlpha = cloud.opacity;
+        	ctx.fillStyle = 'white';
+        		drawCloud(cloud.x, cloud.y, cloud.size);
+        		ctx.restore();
+    		});
+	}
+
+
+        // Input handling
+        function handleJump() {
+            if (gameState === STATES.PLAYING && player.onGround) {
+                player.velocityY = player.jumpPower;
+                player.onGround = false;
+            }
+        }
+
+        canvas.addEventListener('click', handleJump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            handleJump();
+        });
+
+        // Update game logic
+        function update() {
+	    updateClouds();
+            if (gameState !== STATES.PLAYING) return;
+            
+            // Update player physics
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+
+            // Ground collision
+            if (player.y + player.height >= groundY) {
+                player.y = groundY - player.height;
+                player.velocityY = 0;
+                player.onGround = true;
+            }
+
+            // Update coins
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    coin.x -= 3;
+                    coin.pulse += 0.2;
+                    
+                    // Magnet effect
+                    if (magnetActive) {
+                        const dx = player.x + player.width/2 - (coin.x + coinSize/2);
+                        const dy = player.y + player.height/2 - (coin.y + coinSize/2);
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        
+                        if (distance < 150) {
+                            coin.x += dx * 0.15;
+                            coin.y += dy * 0.15;
+                        }
+                    }
+                    
+                    // Check collision with player
+                    if (coin.x < player.x + player.width &&
+                        coin.x + coinSize > player.x &&
+                        coin.y < player.y + player.height &&
+                        coin.y + coinSize > player.y) {
+                        coin.collected = true;
+                        score += 10;
+                        coinsCollectedThisGame++;
+                        updateAllTasksProgress("collect_coins", 1);
+                        updateUI(); // Update UI live when collecting coins
+                    }
+                }
+            });
+            
+            // Update clocks
+            clocks.forEach(clock => {
+                if (!clock.collected) {
+                    clock.x -= 4;
+                    clock.rotation += 0.1;
+                    
+                    // Magnet effect
+                    if (magnetActive) {
+                        const dx = player.x + player.width/2 - (clock.x + powerUpSize/2);
+                        const dy = player.y + player.height/2 - (clock.y + powerUpSize/2);
+                        const distance = Math.sqrt(dx*dx + dy*dy);
+                        
+                        if (distance < 150) {
+                            clock.x += dx * 0.15;
+                            clock.y += dy * 0.15;
+                        }
+                    }
+                    
+                    // Check collision with player
+                    if (clock.x < player.x + player.width &&
+                        clock.x + powerUpSize > player.x &&
+                        clock.y < player.y + player.height &&
+                        clock.y + powerUpSize > player.y) {
+                        clock.collected = true;
+                        timeLeft += 5;
+                        updateAllTasksProgress("collect_clocks", 1);
+                        timeLeftElement.textContent = timeLeft;
+                    }
+                }
+            });
+            
+            // Update magnets
+            magnets.forEach(magnet => {
+                if (!magnet.collected) {
+                    magnet.x -= 4;
+                    magnet.pulse += 0.15;
+                    
+                    // Check collision with player
+                    if (magnet.x < player.x + player.width &&
+                        magnet.x + powerUpSize > player.x &&
+                        magnet.y < player.y + player.height &&
+                        magnet.y + powerUpSize > player.y) {
+                        magnet.collected = true;
+                        activateMagnet();
+                        updateAllTasksProgress("collect_magnets", 1);
+                    }
+                }
+            });
+
+		spikes.forEach(spike => {
+    		if (!spike.hit) {
+        		spike.x -= spike.speed;
+        
+        		// Check collision with player
+        		if (spike.x < player.x + player.width &&
+            		spike.x + spikeSize > player.x &&
+            		spike.y < player.y + player.height &&
+            		spike.y + spikeSize > player.y) {
+            		spike.hit = true;
+            		timeLeft -= 20; // Decrease time by 20 seconds
+            		timeLeftElement.textContent = timeLeft;
+            
+            		// Show hit message
+            		spikeHitMessage = {
+               		 text: "You lost 20s!",
+               		 x: player.x,
+               		 y: player.y - 30,
+               		 opacity: 1,
+               		 timer: 0
+            		};
+            
+            		// Check if time is 0 or below
+            		if (timeLeft <= 0) {
+                		timeLeft = 0;
+                		timeLeftElement.textContent = timeLeft;
+                		endGame();
+                		return;
+            		}
+        		}
+    		}
+	     });
+
+		if (spikeHitMessage) {
+    		spikeHitMessage.timer++;
+    		spikeHitMessage.y -= 1; // Float upward
+    		spikeHitMessage.opacity = Math.max(0, 1 - (spikeHitMessage.timer / 120)); // Fade out over 2 seconds
+    
+    			if (spikeHitMessage.timer >= 120) {
+        		spikeHitMessage = null;
+    			}
+		}
+
+		// Update gifts
+		gifts.forEach(gift => {
+    		if (!gift.collected) {
+        	gift.x -= 2; // Slower than other items
+        	gift.float += 0.1;
+        	gift.sparkle += 0.3;
+        
+        	// Floating motion
+        	gift.y += Math.sin(gift.float) * 0.5;
+        
+        	// Magnet effect
+        	if (magnetActive) {
+            	const dx = player.x + player.width/2 - (gift.x + giftSize/2);
+            	const dy = player.y + player.height/2 - (gift.y + giftSize/2);
+            	const distance = Math.sqrt(dx*dx + dy*dy);
+            
+            	if (distance < 150) {
+                gift.x += dx * 0.15;
+                gift.y += dy * 0.15;
+            }
+        }
+        
+        	// Check collision with player
+        	if (gift.x < player.x + player.width &&
+            	gift.x + giftSize > player.x &&
+            	gift.y < player.y + player.height &&
+            	gift.y + giftSize > player.y) {
+            	gift.collected = true;
+            	processGiftReward();
+        	}
+    	    }
+	});
+
+	// Update reward message
+	if (rewardMessage) {
+    	rewardMessage.timer++;
+    	rewardMessage.y -= 1; // Float upward
+    	rewardMessage.opacity = Math.max(0, 1 - (rewardMessage.timer / 120)); // Fade out over 2 seconds
+    
+    	if (rewardMessage.timer >= 120) {
+        	rewardMessage = null;
+    	    }
+	}
+
+            // Remove off-screen items
+            coins = coins.filter(coin => coin.x > -coinSize && !coin.collected);
+            clocks = clocks.filter(clock => clock.x > -powerUpSize && !clock.collected);
+            magnets = magnets.filter(magnet => magnet.x > -powerUpSize && !magnet.collected);
+	    spikes = spikes.filter(spike => spike.x > -spikeSize && !spike.hit);
+	    gifts = gifts.filter(gift => gift.x > -giftSize && !gift.collected);
+
+        // --- Update player effects ---
+        const selectedFx = ALL_ITEMS.find(i => i.id === savedGameData.player.userItems.selected.effect);
+        if (selectedFx && selectedFx.id === 'fx_sparkle' && Math.random() < 0.5) {
+             effectParticles.push({
+                x: player.x + Math.random() * player.width,
+                y: player.y + Math.random() * player.height,
+                size: Math.random() * 3 + 1,
+                life: 30, // life in frames
+                color: `rgba(255, 223, 100, ${Math.random() * 0.5 + 0.5})`
+             });
+        }
+
+        // update particles
+        effectParticles.forEach((p, index) => {
+            p.life--;
+            p.x += Math.random() * 2 - 1;
+            p.y += Math.random() * 2 - 1;
+            if (p.life <= 0) {
+                effectParticles.splice(index, 1);
+            }
+        });
+        }
+
+        // Render game
+        function render() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw ground
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
+            // Draw grass details
+            ctx.fillStyle = '#32CD32';
+            for (let i = 0; i < canvas.width; i += 20) {
+                ctx.fillRect(i, groundY, 10, 5);
+            }
+
+            // Draw clouds
+		    drawClouds();
+
+
+            if (gameState === STATES.PLAYING) {
+                // Draw player
+                const selectedSkin = ALL_ITEMS.find(i => i.id === savedGameData.player.userItems.selected.skin);
+                ctx.fillStyle = selectedSkin ? selectedSkin.color : '#FF6B6B'; // Fallback color
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+                
+                // Player face
+                ctx.fillStyle = 'white';
+                ctx.fillRect(player.x + 8, player.y + 8, 6, 6);
+                ctx.fillRect(player.x + 26, player.y + 8, 6, 6);
+                ctx.fillStyle = 'black';
+                ctx.fillRect(player.x + 10, player.y + 10, 2, 2);
+                ctx.fillRect(player.x + 28, player.y + 10, 2, 2);
+                ctx.fillRect(player.x + 15, player.y + 20, 10, 3);
+
+                // --- Draw player effects ---
+                effectParticles.forEach(p => {
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Draw coins
+                coins.forEach(coin => {
+                    if (!coin.collected) {
+                        const pulsedSize = coinSize + Math.sin(coin.pulse) * 3;
+                        
+                        ctx.fillStyle = '#FFD700';
+                        ctx.beginPath();
+                        ctx.arc(coin.x + coinSize/2, coin.y + coinSize/2, pulsedSize/2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Coin shine
+                        ctx.fillStyle = '#FFF8DC';
+                        ctx.beginPath();
+                        ctx.arc(coin.x + coinSize/2 - 3, coin.y + coinSize/2 - 3, pulsedSize/4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+                
+                // Draw clocks
+                clocks.forEach(clock => {
+                    if (!clock.collected) {
+                        ctx.save();
+                        ctx.translate(clock.x + powerUpSize/2, clock.y + powerUpSize/2);
+                        ctx.rotate(clock.rotation);
+                        
+                        // Clock body
+                        ctx.fillStyle = '#FF6B6B';
+                        ctx.fillRect(-powerUpSize/2, -powerUpSize/2, powerUpSize, powerUpSize);
+                        
+                        // Clock face
+                        ctx.fillStyle = 'white';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, powerUpSize/3, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Clock hands
+                        ctx.strokeStyle = 'black';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(0, -powerUpSize/4);
+                        ctx.moveTo(0, 0);
+                        ctx.lineTo(powerUpSize/6, 0);
+                        ctx.stroke();
+                        
+                        ctx.restore();
+                    }
+                });
+                
+                // Draw magnets
+                magnets.forEach(magnet => {
+                    if (!magnet.collected) {
+                        const pulsedSize = powerUpSize + Math.sin(magnet.pulse) * 3;
+                        
+                        // Magnet body
+                        ctx.fillStyle = '#E74C3C';
+                        ctx.fillRect(magnet.x, magnet.y, pulsedSize, pulsedSize/2);
+                        ctx.fillStyle = '#3498DB';
+                        ctx.fillRect(magnet.x, magnet.y + pulsedSize/2, pulsedSize, pulsedSize/2);
+                        
+                        // Magnet symbol
+                        ctx.fillStyle = 'white';
+                        ctx.font = '16px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🧲', magnet.x + pulsedSize/2, magnet.y + pulsedSize/2 + 5);
+                    }
+                });
+
+		// Draw spikes
+		spikes.forEach(spike => {
+    		if (!spike.hit) {
+        		ctx.fillStyle = '#E74C3C'; // Red color
+        		ctx.beginPath();
+        		// Draw triangle spike pointing upward
+        		ctx.moveTo(spike.x + spikeSize/2, spike.y); // Top point
+        		ctx.lineTo(spike.x, spike.y + spikeSize); // Bottom left
+        		ctx.lineTo(spike.x + spikeSize, spike.y + spikeSize); // Bottom right
+        		ctx.closePath();
+        		ctx.fill();
+        
+        		// Add some shading to make it look more 3D
+        		ctx.fillStyle = '#C0392B'; // Darker red for shading
+        		ctx.beginPath();
+        		ctx.moveTo(spike.x + spikeSize/2, spike.y);
+        		ctx.lineTo(spike.x + spikeSize, spike.y + spikeSize);
+        		ctx.lineTo(spike.x + spikeSize - 5, spike.y + spikeSize - 5);
+        		ctx.closePath();
+        		ctx.fill();
+        
+        		// Add outline for better visibility
+        		ctx.strokeStyle = '#A93226';
+        		ctx.lineWidth = 2;
+        		ctx.beginPath();
+        		ctx.moveTo(spike.x + spikeSize/2, spike.y);
+        		ctx.lineTo(spike.x, spike.y + spikeSize);
+        		ctx.lineTo(spike.x + spikeSize, spike.y + spikeSize);
+        		ctx.closePath();
+        		ctx.stroke();
+   		 	}
+		});
+	
+		// Draw spike hit message
+		if (spikeHitMessage) {
+    		ctx.save();
+    		ctx.globalAlpha = spikeHitMessage.opacity;
+    		ctx.fillStyle = '#FF4444';
+    		ctx.font = 'bold 16px Arial';
+    		ctx.textAlign = 'center';
+    		ctx.strokeStyle = 'white';
+    		ctx.lineWidth = 3;
+    
+    		// Draw text outline
+    		ctx.strokeText(spikeHitMessage.text, spikeHitMessage.x + player.width/2, spikeHitMessage.y);
+    		// Draw text
+    		ctx.fillText(spikeHitMessage.text, spikeHitMessage.x + player.width/2, spikeHitMessage.y);
+    
+    		ctx.restore();
+		}
+        
+
+// Draw gifts
+gifts.forEach(gift => {
+    if (!gift.collected) {
+        const floatOffset = Math.sin(gift.float) * 3;
+        const sparkleIntensity = Math.sin(gift.sparkle) * 0.5 + 0.5;
+        
+        ctx.save();
+        ctx.translate(gift.x + giftSize/2, gift.y + giftSize/2 + floatOffset);
+        
+        // Gift box
+        ctx.fillStyle = '#E74C3C';
+        ctx.fillRect(-giftSize/2, -giftSize/2, giftSize, giftSize);
+        
+        // Gift ribbon
+        ctx.fillStyle = '#F1C40F';
+        ctx.fillRect(-giftSize/2, -3, giftSize, 6); // Horizontal ribbon
+        ctx.fillRect(-3, -giftSize/2, 6, giftSize); // Vertical ribbon
+        
+        // Gift bow
+        ctx.fillStyle = '#E67E22';
+        ctx.beginPath();
+        ctx.arc(-5, -giftSize/2 - 2, 4, 0, Math.PI * 2);
+        ctx.arc(5, -giftSize/2 - 2, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Sparkle effect
+        ctx.fillStyle = `rgba(255, 255, 255, ${sparkleIntensity})`;
+        for (let i = 0; i < 4; i++) {
+            const angle = (i * Math.PI / 2) + gift.sparkle;
+            const sparkleX = Math.cos(angle) * (giftSize/2 + 5);
+            const sparkleY = Math.sin(angle) * (giftSize/2 + 5);
+            ctx.fillRect(sparkleX - 1, sparkleY - 1, 2, 2);
+        }
+        
+        ctx.restore();
+    }
+});
+
+// Draw reward message
+if (rewardMessage) {
+    ctx.save();
+    ctx.globalAlpha = rewardMessage.opacity;
+    ctx.fillStyle = rewardMessage.color;
+    ctx.font = 'bold 18px Arial';
+    ctx.textAlign = 'center';
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 3;
+    
+    // Draw text outline
+    ctx.strokeText(rewardMessage.text, rewardMessage.x + player.width/2, rewardMessage.y);
+    // Draw text
+    ctx.fillText(rewardMessage.text, rewardMessage.x + player.width/2, rewardMessage.y);
+    
+    ctx.restore();
+}
+
+	// Draw reward message
+	if (rewardMessage) {
+    		ctx.save();
+    		ctx.globalAlpha = rewardMessage.opacity;
+    		ctx.fillStyle = rewardMessage.color;
+    		ctx.font = 'bold 18px Arial';
+    		ctx.textAlign = 'center';
+    		ctx.strokeStyle = 'white';
+    		ctx.lineWidth = 3;
+    
+    	// Draw text outline
+    		ctx.strokeText(rewardMessage.text, rewardMessage.x + player.width/2, rewardMessage.y);
+    	// Draw text
+    		ctx.fillText(rewardMessage.text, rewardMessage.x + player.width/2, rewardMessage.y);
+     	ctx.restore();   
+	}
+
+                // Draw magnet field effect
+                if (magnetActive) {
+                    ctx.strokeStyle = 'rgba(52, 152, 219, 0.3)';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(player.x + player.width/2, player.y + player.height/2, 150, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+            }
+        }
+
+	function drawCloud(x, y, size = 25) {
+    		const scale = size / 25;
+    		ctx.beginPath();
+    		ctx.arc(x, y, 25 * scale, 0, Math.PI * 2);
+    		ctx.arc(x + 25 * scale, y, 35 * scale, 0, Math.PI * 2);
+    		ctx.arc(x + 50 * scale, y, 25 * scale, 0, Math.PI * 2);
+    		ctx.arc(x + 30 * scale, y - 20 * scale, 20 * scale, 0, Math.PI * 2);
+    		ctx.fill();
+	}
+    function checkActiveBoosters() {
+            const now = Date.now();
+            let changed = false;
+            if (savedGameData.activeBoosters.xp.expires !== 0 && now > savedGameData.activeBoosters.xp.expires) {
+                savedGameData.activeBoosters.xp = { multiplier: 1, expires: 0 };
+                changed = true;
+            }
+            if (savedGameData.activeBoosters.coins.expires !== 0 && now > savedGameData.activeBoosters.coins.expires) {
+                savedGameData.activeBoosters.coins = { multiplier: 1, expires: 0 };
+                changed = true;
+            }
+            if(changed) saveActiveBoosters();
+        }
+
+    function updateBoosterUI() {
+            checkActiveBoosters();
+            const now = Date.now();
+
+            // XP Booster
+            const xpBoostStatus = document.getElementById('xpBoostStatus');
+            if (savedGameData.activeBoosters.xp.expires > now) {
+                const timeLeft = Math.round((savedGameData.activeBoosters.xp.expires - now) / 1000);
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                xpBoostStatus.innerHTML = `⚡ XP Boost (x${savedGameData.activeBoosters.xp.multiplier}): ${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+                xpBoostStatus.style.display = 'block';
+            } else {
+                xpBoostStatus.style.display = 'none';
+            }
+
+            // Coin Booster
+            const coinBoostStatus = document.getElementById('coinBoostStatus');
+            if (savedGameData.activeBoosters.coins.expires > now) {
+                const timeLeft = Math.round((savedGameData.activeBoosters.coins.expires - now) / 1000);
+                 const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                let multiplierText = savedGameData.activeBoosters.coins.multiplier.toString();
+                if(savedGameData.activeBoosters.coins.multiplier > 1 && savedGameData.activeBoosters.coins.multiplier < 2) {
+                    multiplierText = `+${(savedGameData.activeBoosters.coins.multiplier - 1) * 100}%`
+                } else {
+                    multiplierText = `x${savedGameData.activeBoosters.coins.multiplier}`
+                }
+                coinBoostStatus.innerHTML = `🚀 Coin Boost (${multiplierText}): ${minutes}m ${seconds.toString().padStart(2, '0')}s`;
+                coinBoostStatus.style.display = 'block';
+            } else {
+                coinBoostStatus.style.display = 'none';
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+
+            const now = Date.now();
+            if (now - lastBoosterUpdate > 1000) {
+                updateBoosterUI();
+                lastBoosterUpdate = now;
+            }
+
+            if (document.getElementById('tasksMenu').style.display === 'block') {
+                renderTasksMenu();}
+        }
+
+        function applySelectedBackground() {
+            const selectedBg = ALL_ITEMS.find(i => i.id === savedGameData.player.userItems.selected.background);
+            if (selectedBg && selectedBg.gradient) {
+                canvas.style.background = selectedBg.gradient;
+            } else {
+                // Fallback to default
+                canvas.style.background = 'linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #32CD32 70%, #228B22 100%)';
+            }
+        }
+
+        // Initialize the game
+        updateHomeScreen();
+	    initClouds();
+        gameLoop();
+        applySelectedBackground();
+        updateBoosterUI();
+
+        // --- TASK MENU UI & TAB SWITCHING ---
+
+
+        function openTasks() {
+
+            hideAllMenus();
+            document.getElementById('tasksMenu').style.display = 'block';
+            showingDailyTasks = true;
+            renderTasksMenu();
+        }
+
+        function switchTaskTab(isDaily) {
+            
+            showingDailyTasks = isDaily;
+            renderTasksMenu();
+        }
+
+        function renderTasksMenu() {
+            resetTasksIfNeeded(); // In case of new day/week let showingDailyTasks = true;
+
+            document.getElementById('tasksPLAI').textContent = savedGameData.player.plai;
+            document.getElementById('tasksXP').textContent = savedGameData.pass.currentXP;
+            const tasks = showingDailyTasks ? savedGameData.tasks.daily : savedGameData.tasks.weekly;
+            const tasksList = document.getElementById('tasksList');
+            const rerollCost = showingDailyTasks ? 10 : 50;
+            const now = Date.now();
+
+
+            // Tab highlight
+            document.getElementById('dailyTab').style.background = showingDailyTasks ? '#FFD700' : '';
+            document.getElementById('weeklyTab').style.background = !showingDailyTasks ? '#FFD700' : '';
+
+            // Reset timer
+            let resetTime = showingDailyTasks ? savedGameData.tasks.dailyReset : savedGameData.global.previousLeaderboard;
+            let timeLeft = Math.max(0, Math.floor((resetTime - now) / 1000));
+            let hours = Math.floor(timeLeft / 3600);
+            let mins = Math.floor((timeLeft % 3600) / 60);
+            let secs = timeLeft % 60;
+            let resetText = showingDailyTasks
+                ? `Resets in: ${hours}h ${mins}m ${secs}s`
+                : `Resets in: ${hours}h ${mins}m ${secs}s`;
+
+            // Render tasks
+            tasksList.innerHTML = `<div style="text-align:center; margin-bottom:10px; color:#FFD700;">${resetText}</div>`;
+            tasks.forEach((task, i) => {
+                let progress = Math.min(task.progress, task.goal);
+                let percent = Math.floor((progress / task.goal) * 100);
+                let completed = task.completed || progress >= task.goal;
+                let claimBtn = '';
+                let rerollBtn = '';
+                let completedText = '';
+
+                if (task.completed) {
+                    completedText = `<span style="color:#00FF88; font-weight:bold; font-size:16px;">Completed</span>`;
+                } else if (progress >= task.goal) {
+                    claimBtn = `<button class="menu-btn" data-action="claim" data-index="${i}" data-daily="${showingDailyTasks}">Claim</button>`;
+                } else if (task.canReroll) {
+                    rerollBtn = `<button class="menu-btn" data-action="reroll" data-index="${i}" data-daily="${showingDailyTasks}">Reroll (${rerollCost} PLAI)</button>`;
+                }
+                tasksList.innerHTML += `
+                    <div style="background:rgba(0,0,0,0.2); border-radius:10px; margin:10px 0; padding:15px;">
+                        <div style="font-size:16px; font-weight:bold; color:white;">${task.description}</div>
+                        <div style="margin:8px 0;">
+                            <div style="background:#333; border-radius:5px; height:16px; width:100%; overflow:hidden;">
+                                <div style="background:${completed ? '#4CAF50' : '#FFD700'}; width:${percent}%; height:100%;"></div>
+                            </div>
+                            <span style="color:#FFD700;">${progress} / ${task.goal}</span>
+                            <span style="margin-left:15px; color:#00FFAA;">+${task.xp} XP</span>
+                        </div>
+                        ${claimBtn} ${rerollBtn} ${completedText}
+                    </div>
+                `;
+            });
+        }
+
+        // --- TASK REROLL & CLAIM ---
+
+        function rerollTask(index, isDaily) {
+            console.log("rerollTask called", index, isDaily);
+            const tasks = isDaily ? savedGameData.tasks.daily : savedGameData.tasks.weekly;
+            const cost = isDaily ? 10 : 50;
+            if (!tasks[index].canReroll || tasks[index].completed) return;
+
+            if (spendPLAI(cost)) {
+                // Replace with a new random task (avoid duplicate types)
+                const usedTypes = tasks.map((t, i) => i === index ? null : t.type).filter(Boolean);
+                tasks[index] = getRandomTask(isDaily, usedTypes);
+                renderTasksMenu();
+            } else {
+                showRewardNotification("❌ Not enough PLAI to reroll!");
+            }
+        }
+
+        function claimTask(index, isDaily) {
+            const tasks = isDaily ? savedGameData.tasks.daily : savedGameData.tasks.weekly;
+            const task = tasks[index];
+            if (!task.completed && task.progress >= task.goal) {
+                checkActiveBoosters();
+                const xpGained = Math.round(task.xp * savedGameData.activeBoosters.xp.multiplier);
+                savedGameData.player.totalXP += xpGained;
+                // Add XP to pass
+                savedGameData.pass.currentXP += xpGained;
+                checkPassLevelAndRewards();
+                updatePassStats();
+                renderTasksMenu(); // This will update the XP shown in the tasks menu
+                task.completed = true;
+                task.canReroll = false;
+                // Optionally: show a reward animation/message
+                // alert("Task completed! XP awarded!");
+                showRewardNotification("✨ Task completed! XP awarded!");
+            }
+            saveAllData()
+        }
+
+        // --- TASK PROGRESS UPDATER ---
+
+        function updateAllTasksProgress(type, amount = 1) {
+            let changed = false;
+            // Helper to update a set of tasks
+            function updateTasks(tasks) {
+                let updated = false;
+                tasks.forEach(task => {
+                    if (!task.completed && task.type === type) {
+                        task.progress += amount;
+                        if (task.progress >= task.goal) {
+                            task.progress = task.goal;
+                        }
+                        updated = true;
+                    }
+                });
+                return updated;
+            }
+           
+
+
+                   // Update both daily and weekly
+            if (updateTasks(savedGameData.tasks.daily)) changed = true;
+            if (updateTasks(savedGameData.tasks.weekly)) changed = true;
+            if (changed) {
+                // If the menu is open, re-render it
+                if (document.getElementById('tasksMenu').style.display === 'block') {
+                    renderTasksMenu();
+                }
+            }
+        }
+
+        window.rerollTask = rerollTask;
+        window.claimTask = claimTask;
+
+            if (!coinSpawnTimer) coinSpawnTimer = setInterval(createCoin, 1500);
+            if (savedGameData.player.upgrades.clockDropsUnlocked && !clockSpawnTimer) clockSpawnTimer = setInterval(createClock, Math.random() * 5000 + 5000);
+            if (savedGameData.player.upgrades.magnetPowerUnlocked && !magnetSpawnTimer) magnetSpawnTimer = setInterval(createMagnet, Math.random() * 8000 + 12000);
+            if (!giftSpawnTimer) {
+                const giftSpawnInterval = Math.max(20000, 60000 - (savedGameData.player.upgrades.giftSpeedLevel * 5000));
+                giftSpawnTimer = setInterval(createGift, giftSpawnInterval);
+            }
+            if (!spikeSpawnTimer) spikeSpawnTimer = setInterval(() => { createSpike(); }, Math.random() * 7000 + 3000);
+   
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('tasksList').addEventListener('mousedown', function(e) {
+            if (e.target && e.target.classList.contains('menu-btn')) {
+                const action = e.target.getAttribute('data-action');
+                const index = parseInt(e.target.getAttribute('data-index'));
+                const isDaily = e.target.getAttribute('data-daily') === 'true';
+                if (action === 'claim') {
+                    claimTask(index, isDaily);
+                } else if (action === 'reroll') {
+                    rerollTask(index, isDaily);
+                }
+            }
+        });
+    });
+    </script>
+
+    <script>
+
+
+    
+
+
+
+    
+    // factions related to the jump pass
+    function createRewardSlot(level, type) {
+            const slot = document.createElement('div');
+            slot.className = 'reward-slot';
+            
+            const reward = gameData.rewards[type][level];
+            const isUnlocked = level <= savedGameData.pass.currentLevel;
+            const isClaimed = savedGameData.pass.claimedRewards[type].includes(level);
+            const isPremiumLocked = type === 'premium' && !savedGameData.pass.premiumUnlocked;
+
+            // Add reward type class for border coloring
+            slot.classList.add(reward.type);
+
+            if (isUnlocked && !isClaimed && !isPremiumLocked) {
+                slot.classList.add('unlocked');
+                slot.onclick = () => claimReward(level, type, slot);
+            } else if (isClaimed) {
+                slot.classList.add('claimed');
+            } else if (isPremiumLocked) {
+                slot.classList.add('premium-locked');
+            }
+
+            const icon = document.createElement('div');
+            icon.className = 'reward-icon';
+            icon.textContent = reward.icon;
+
+            const amountLabel = document.createElement('div');
+            amountLabel.className = 'reward-amount';
+            
+            if (reward.type === 'boost') {
+                amountLabel.innerHTML = `${reward.amount}<br><small>${reward.duration}</small>`;
+            } else if (reward.type === 'plai') {
+                amountLabel.textContent = `${reward.amount} $PLAI`;
+            } else if (reward.type === 'ticket') {
+                amountLabel.innerHTML = `${reward.amount}<br>Spin Ticket${reward.amount > 1 ? 's' : ''}`;
+            } else if (reward.type === 'background') {
+                amountLabel.textContent = reward.amount;
+            } else if (reward.type === 'special') {
+                amountLabel.textContent = reward.amount;
+            } else {
+                amountLabel.textContent = `${reward.amount}`;
+            }
+
+            slot.appendChild(icon);
+            slot.appendChild(amountLabel);
+
+            return slot;
+        }
+
+        function claimReward(level, type, slotElement) {
+            const claimEffect = document.createElement('div');
+            claimEffect.className = 'claim-effect';
+            slotElement.appendChild(claimEffect);
+
+            savedGameData.pass.claimedRewards[type].push(level);
+            
+            const reward = gameData.rewards[type][level];
+            updatePassStats();
+            // Update player balance based on reward type
+            let notificationMessage = '';
+            
+            switch (reward.type) {
+                case 'coins':
+                    savedGameData.player.gold += reward.amount;
+                    notificationMessage = `🪙 +${reward.amount} Coins claimed!`;
+                    break;
+                case 'plai':
+                savedGameData.player.plai += reward.amount;
+                    notificationMessage = `💎 +${reward.amount} $PLAI claimed!`;
+                    break;
+                case 'boost':
+                    notificationMessage = `⚡ ${reward.amount} boost claimed! (${reward.duration})`;
+                    activateBooster(reward.amount, reward.duration);
+                    break;
+                case 'background':
+                    notificationMessage = `🎨 ${reward.amount} background unlocked!`;
+                    if (reward.itemId) {
+                        unlockItem(reward.itemId);
+                    }
+                    break;
+                case 'ticket':
+                savedGameData.player.tickets += reward.amount;
+                    notificationMessage = `🎟️ +${reward.amount} Spin a Wheel Ticket(s) claimed!`;
+                    break;
+                case 'special':
+                    notificationMessage = `✨ ${reward.amount} claimed!`;
+                    break;
+            }
+            updateHomeScreen();
+            updatePassBalances();
+            setTimeout(() => {
+                slotElement.classList.remove('unlocked');
+                slotElement.classList.add('claimed');
+                slotElement.onclick = null;
+                claimEffect.remove();
+                showRewardNotification(notificationMessage);
+            }, 1000);
+            saveAllData()
+        }
+
+        function updateBalanceDisplay() {
+            DOM.coinBalance.textContent = savedGameData.player.gold.toLocaleString();
+            DOM.plaiBalance.textContent = savedGameData.player.plai.toLocaleString();
+        }
+
+        function showRewardNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(45deg, #00ff00, #00cc00);
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                font-weight: bold;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+                text-align: center;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function parseDuration(durationStr) {
+            let milliseconds = 0;
+            if (durationStr.includes('hr')) {
+                milliseconds = parseInt(durationStr) * 60 * 60 * 1000;
+            } else if (durationStr.includes('min')) {
+                milliseconds = parseInt(durationStr) * 60 * 1000;
+            }
+            return milliseconds;
+        }
+
+        function activateBooster(amountStr, durationStr) {
+            const now = Date.now();
+            const durationMs = parseDuration(durationStr);
+            const expires = now + durationMs;
+
+            if (amountStr.includes('XP')) {
+                const multiplier = parseFloat(amountStr.replace('x XP', ''));
+                savedGameData.activeBoosters.xp = { multiplier, expires };
+            } else if (amountStr.includes('Coin')) {
+                let multiplier;
+                if (amountStr.includes('%')) {
+                    multiplier = 1 + (parseInt(amountStr) / 100);
+                } else {
+                    multiplier = parseFloat(amountStr.replace('x Coins', ''));
+                }
+                savedGameData.activeBoosters.coins = { multiplier, expires };
+            }
+            saveActiveBoosters();
+            updateBoosterUI(); // Immediately update UI
+        }
+
+        
+
+        
+
+        function unlockPremium() {
+    const passCost = 1000;
+
+    // First, check if the user already has the pass.
+    if (savedGameData.pass.premiumUnlocked) {
+        console.log("Button clicked, but pass is already unlocked.");
+        return; // Exit because they already own it.
+    }
+
+    // Now, attempt to spend the PLAI.
+    // The spendPLAI function should return true on success, false on failure.
+    if (spendPLAI(passCost)) {
+        // This code will only run if spendPLAI was successful.
+        console.log("Purchase successful! Unlocking premium pass.");
+
+        savedGameData.pass.premiumUnlocked = true; // Set the status
+        
+        // Update the UI to reflect the purchase
+        generateRewards();
+        updatePassBalances();
+        updateHomeScreen();
+        DOM.unlockButton.textContent = 'UNLOCKED';
+        DOM.unlockButton.style.background = '#00ff00';
+        DOM.unlockButton.disabled = true;
+
+        showRewardNotification('🌟 Premium Pass Unlocked!');
+
+    } else {
+        // This code will run if spendPLAI failed (not enough money).
+        console.log("Purchase failed. Not enough PLAI.");
+        showRewardNotification('Not enough PLAI to unlock Premium Pass!');
+    }
+}
+
+        function updateUI() {
+            updateBalanceDisplay();
+            updateProgressDisplay();
+            updateStatsDisplay();
+            generateRewards();
+            scoreElement.textContent = score;
+            timeLeftElement.textContent = timeLeft;
+            coinsThisGameElement.textContent = coinsCollectedThisGame;
+        }
+
+        function updateProgressDisplay() {
+            DOM.progressLevelInfo.textContent = `Level ${savedGameData.pass.currentLevel}`;
+            // Calculate the XP required for the next level for display
+            let xpRequired = 0;
+            for (let i = 1; i <= savedGameData.pass.currentLevel; i++) {
+                xpRequired += 50 * i;
+            }
+            DOM.progressXpInfo.textContent = `${savedGameData.pass.currentXP.toLocaleString()} / ${savedGameData.pass.xpToNext.toLocaleString()} XP (Next: +${getXPForLevel(savedGameData.pass.currentLevel + 1)} XP)`;
+            const percentage = (savedGameData.pass.currentXP / savedGameData.pass.xpToNext) * 100;
+            DOM.progressBar.style.width = percentage + '%';
+        }
+
+        function updateStatsDisplay() {
+            const totalLevels = Object.keys(gameData.rewards.basic).length;
+            DOM.statsCurrentLevel.textContent = savedGameData.pass.currentLevel;
+            const claimedCount = savedGameData.pass.claimedRewards.basic.length + savedGameData.pass.claimedRewards.premium.length;
+            DOM.statsRewardsClaimed.textContent = claimedCount;
+            const totalRewards = totalLevels * 2; // basic and premium
+            DOM.statsTotalRewards.textContent = totalRewards;
+        }
+
+        function updateCountdown() {
+            const now = new Date();
+            const currentMonth = now.getUTCMonth();
+            const currentYear = now.getUTCFullYear();
+            
+            const nextReset = new Date(Date.UTC(currentYear, currentMonth + 1, 1, 0, 0, 0));
+            
+            const timeDiff = nextReset.getTime() - now.getTime();
+            
+            if (timeDiff <= 0) {
+                DOM.countdownTimer.textContent = 'Pass Reset Available!';
+                return;
+            }
+            
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+            
+            DOM.countdownTimer.textContent = 
+                `Reset in ${days}d ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        // --- INITIALIZATION ---
+        DOM.unlockButton.addEventListener('click', unlockPremium);
+        updateUI();
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+        updateBoosterUI();
+    </script>
+
+    <script>
+    function updatePassBalances() {
+        document.getElementById('coin-balance').textContent = savedGameData.player.gold.toLocaleString();
+        document.getElementById('plai-balance').textContent = savedGameData.player.plai.toLocaleString(); // No decimals
+    }
+    function openJumpPass() {
+        updatePassStats();
+        hideAllMenus();
+        document.getElementById('jumpPassMenu').style.display = 'block';
+        updateJumpPassUI();
+        checkPassLevelAndRewards();
+        // Update unlock button state
+        if (savedGameData.pass.premiumUnlocked) {
+            DOM.unlockButton.textContent = 'UNLOCKED';
+            DOM.unlockButton.style.background = '#00ff00';
+            DOM.unlockButton.disabled = true;
+            DOM.unlockButton.onclick = null;
+        } else {
+            DOM.unlockButton.textContent = 'Unlock for 1000 $PLAI';
+            DOM.unlockButton.style.background = '';
+            DOM.unlockButton.disabled = false;
+            DOM.unlockButton.onclick = unlockPremium;
+        }
+    }
+    </script>
+
+    <script>
+    function updateJumpPassUI() {
+        updatePassBalances();
+        updateProgressDisplay();
+        updateStatsDisplay();
+        generateRewards();
+    }
+    </script>
+
+    <script>
+    function updatePassStats() {
+        const totalLevels = Object.keys(gameData.rewards.basic).length;
+        DOM.statsCurrentLevel.textContent = savedGameData.pass.currentLevel;
+        const claimedCount = savedGameData.pass.claimedRewards.basic.length + savedGameData.pass.claimedRewards.premium.length;
+        DOM.statsRewardsClaimed.textContent = claimedCount;
+        const totalRewards = totalLevels * 2; // basic and premium
+        DOM.statsTotalRewards.textContent = totalRewards;
+    }
+    </script>
+
+    <script>
+    function checkPassLevelAndRewards() {
+        let leveledUp = false;
+        while (savedGameData.pass.currentXP >= savedGameData.pass.xpToNext) {
+            savedGameData.pass.currentXP -= savedGameData.pass.xpToNext;
+            savedGameData.pass.currentLevel++;
+            savedGameData.pass.xpToNext = getXPForLevel(savedGameData.pass.currentLevel);
+            leveledUp = true;
+        }
+        if (leveledUp) {
+            updateProgressDisplay();
+            updatePassStats();
+            generateRewards();
+        }
+    }
+    </script>
+
+
+    <div id="skinsMenu" class="menu" style="display: none; max-width: 700px;">
+      <h2>🎨 Skins, Backgrounds & Effects</h2>
+      <div id="skins-section">
+        <h3>Player Skins</h3>
+        <div id="skins-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+      </div>
+      <div id="backgrounds-section">
+        <h3>Backgrounds</h3>
+        <div id="backgrounds-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+      </div>
+      <div id="effects-section">
+        <h3>Effects</h3>
+        <div id="effects-list" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+      </div>
+      <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
+    </div>
+
+    <script>
+    // Master list of all unlockable items
+    const ALL_ITEMS = [
+      // Skins (from old avatar system, now in skins menu)
+      { id: 'skin_red', type: 'skin', name: 'Classic Red', color: '#FF6B6B', source: 'shop', price: 0 },
+      { id: 'skin_cyan', type: 'skin', name: 'Aqua Cyan', color: '#4ECDC4', source: 'shop', price: 250 },
+      { id: 'skin_blue', type: 'skin', name: 'Sky Blue', color: '#45B7D1', source: 'shop', price: 250 },
+      { id: 'skin_green', type: 'skin', name: 'Lime Green', color: '#96E6A1', source: 'shop', price: 250 },
+
+      // Backgrounds
+      { id: 'bg_default', type: 'background', name: 'Default Sky', gradient: 'linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #32CD32 70%, #228B22 100%)', source: 'default' },
+      { id: 'bg_ocean', type: 'background', name: 'Ocean Theme', gradient: 'linear-gradient(to bottom, #00BFFF, #1E90FF 70%, #008080 70%, #005A5A 100%)', source: 'pass' },
+      { id: 'bg_space', type: 'background', name: 'Space Theme', gradient: 'linear-gradient(to bottom, #0c0a1a, #2a2a4a 70%, #1a1a2a 70%, #000 100%)', source: 'pass' },
+      { id: 'bg_forest', type: 'background', name: 'Forest Theme', gradient: 'linear-gradient(to bottom, #228B22, #556B2F 70%, #3B2A0A 70%, #211703 100%)', source: 'pass' },
+      { id: 'bg_neon', type: 'background', name: 'Neon Theme', gradient: 'linear-gradient(to bottom, #ff00cc, #333399 70%, #1a1a1a 70%, #000 100%)', source: 'pass' },
+      { id: 'bg_crystal', type: 'background', name: 'Crystal Theme', gradient: 'linear-gradient(to bottom, #B0E0E6, #ADD8E6 70%, #708090 70%, #465058 100%)', source: 'pass' },
+      
+      // Effects
+      { id: 'fx_none', type: 'effect', name: 'None', source: 'default' },
+      { id: 'fx_sparkle', type: 'effect', name: 'Sparkle Trail', source: 'pass' }, // Example, not yet unlockable
+    ];
+
+
+
+
+    function openSkins() {
+      hideAllMenus();
+      document.getElementById('skinsMenu').style.display = 'block';
+      renderSkinsMenu();
+    }
+
+    function renderSkinsMenu() {
+        const lists = {
+            skin: document.getElementById('skins-list'),
+            background: document.getElementById('backgrounds-list'),
+            effect: document.getElementById('effects-list'),
+        };
+
+        // Clear existing lists
+        Object.values(lists).forEach(list => list.innerHTML = '');
+
+        // Group items by type
+        const itemsByType = ALL_ITEMS.reduce((acc, item) => {
+            if (!acc[item.type]) acc[item.type] = [];
+            acc[item.type].push(item);
+            return acc;
+        }, {});
+
+        // Render each item type
+        for (const type in itemsByType) {
+            itemsByType[type].forEach(item => {
+                const container = document.createElement('div');
+                container.style.textAlign = 'center';
+                container.style.position = 'relative';
+
+                const div = document.createElement('div');
+                div.style.width = '80px';
+                div.style.height = '80px';
+                div.style.background = item.gradient || item.color || '#ccc';
+                div.style.borderRadius = '10px';
+                div.style.border = '2px solid #555';
+                div.style.display = 'flex';
+                div.style.alignItems = 'center';
+                div.style.justifyContent = 'center';
+                div.style.margin = '0 auto 5px auto';
+                
+                const nameLabel = document.createElement('div');
+                nameLabel.textContent = item.name;
+                nameLabel.style.fontSize = '12px';
+
+                const isUnlocked = savedGameData.player.userItems.unlocked.includes(item.id);
+                const isSelected = savedGameData.player.userItems.selected[type] === item.id;
+
+                if (isSelected) {
+                    div.style.border = '3px solid #FFD700';
+                    div.style.boxShadow = '0 0 10px #FFD700';
+                }
+
+                if (isUnlocked) {
+                    div.style.cursor = 'pointer';
+                    div.onclick = () => {
+                        savedGameData.player.userItems.selected[type] = item.id;
+
+                        renderSkinsMenu();
+                        // If background is changed, apply it immediately
+                        if (type === 'background') {
+                            applySelectedBackground();
+                        }
+                    };
+                } else { // Item is LOCKED
+                    div.style.opacity = '0.6';
+                    const lockIcon = document.createElement('span');
+                    lockIcon.textContent = '🔒';
+                    lockIcon.style.position = 'absolute';
+                    lockIcon.style.top = '5px';
+                    lockIcon.style.right = '10px';
+                    lockIcon.style.fontSize = '18px';
+                    lockIcon.style.textShadow = '0 0 3px black';
+                    container.appendChild(lockIcon);
+
+                    // Handle purchasable items
+                    if (item.source === 'shop' && item.price > 0) {
+                        div.style.cursor = 'pointer';
+                        const priceLabel = document.createElement('div');
+                        priceLabel.innerHTML = `<div class="coin-icon" style="width:12px; height:12px; margin-right:4px; display:inline-block; vertical-align: middle;"></div> ${item.price}`;
+                        priceLabel.style.fontSize = '12px';
+                        priceLabel.style.fontWeight = 'bold';
+                        
+                        container.appendChild(div);
+                        container.appendChild(nameLabel);
+                        container.appendChild(priceLabel);
+                        
+                        div.onclick = () => {
+                            if (savedGameData.player.gold >= item.price) {
+                                savedGameData.player.gold -= item.price;
+                                unlockItem(item.id);
+                                // Automatically select the new item
+                                savedGameData.player.userItems.selected[type] = item.id; 
+                                updateHomeScreen(); // Update gold display on home
+                            } else {
+                                showRewardNotification("❌ Not enough gold to buy " + item.name + "!");
+                            }
+                        };
+                    } else {
+                        // For non-purchasable locked items (e.g. from pass)
+                        container.appendChild(div);
+                        container.appendChild(nameLabel);
+                    }
+                }
+                
+                // If it's unlocked, add the elements now.
+                if(isUnlocked){
+                    container.appendChild(div);
+                    container.appendChild(nameLabel);
+                }
+                
+                lists[type].appendChild(container);
+            });
+        }
+    }
+
+    function unlockItem(itemId) {
+        if (!savedGameData.player.userItems.unlocked.includes(itemId)) {
+            savedGameData.player.userItems.unlocked.push(itemId);
+            saveAllData();
+            renderSkinsMenu();
+        }
+    }
+
+    // Example: Call unlockItem('skin2') when user buys/unlocks Mint Green skin
+    // Example: Call unlockItem('bg2') when user unlocks Neon background from pass
+
+    // --- How to use selected skin/background/effect in game logic ---
+    // When drawing the player:
+    // const selectedSkin = ALL_ITEMS.find(i => i.id === userItems.selected.skin);
+    // ctx.fillStyle = selectedSkin ? selectedSkin.color : '#FF6B6B';
+    // If using images: ctx.drawImage(selectedSkin.image, ...)
+
+    // When drawing the background:
+    // const selectedBg = ALL_ITEMS.find(i => i.id === userItems.selected.background);
+    // Use selectedBg.color or selectedBg.image for background
+
+    // For effects:
+    // const selectedFx = ALL_ITEMS.find(i => i.id === userItems.selected.effect);
+    // if (selectedFx && selectedFx.id === 'fx1') { /* sparkle effect logic */ }
+    </script>
+
+    <script>
+    function openWheelMenu() {
+        gameState = STATES.WHEEL;
+        hideAllMenus();
+        document.getElementById('wheelMenu').style.display = 'block';
+
+        // Update displays
+        document.getElementById('wheelTickets').textContent = savedGameData.player.tickets;
+        document.getElementById('wheelPLAI').textContent = savedGameData.player.plai;
+        document.getElementById('lastPrizeDisplay').innerHTML = '';
+
+        // Generate wheel segments
+        const wheel = document.getElementById('wheel');
+        wheel.innerHTML = '';
+        const segmentAngle = 360 / wheelSegments.length;
+
+        const colors = ['#808080', '#FFA500']; // Grey for nothing, Orange for gold/plai
+
+        wheelSegments.forEach((segment, index) => {
+            const segDiv = document.createElement('div');
+            segDiv.className = 'wheel-segment';
+
+            let bgColor;
+            if (segment.type === 'nothing') {
+                bgColor = '#777';
+            } else if (segment.type === 'gold') {
+                bgColor = '#FFA500';
+            } else { // PLAI
+                bgColor = '#9D4EDD';
+            }
+
+            // Create the clip-path for the wedge
+            const startAngle = segmentAngle * index;
+            const endAngle = startAngle + segmentAngle;
+            // We need to convert angles to radians for Math functions
+            const startRad = (startAngle - 90) * Math.PI / 180;
+            const endRad = (endAngle - 90) * Math.PI / 180;
+            // Calculate the points for the polygon
+            const x1 = 50 + 50 * Math.cos(startRad);
+            const y1 = 50 + 50 * Math.sin(startRad);
+            const x2 = 50 + 50 * Math.cos(endRad);
+            const y2 = 50 + 50 * Math.sin(endRad);
+            
+            segDiv.style.clipPath = `polygon(50% 50%, ${x1}% ${y1}%, ${x2}% ${y2}%)`;
+            segDiv.style.backgroundColor = bgColor;
+
+            const label = document.createElement('div');
+            label.className = 'segment-label';
+            label.textContent = segment.label;
+            // Position and rotate the label
+            const labelAngle = startAngle + segmentAngle / 2;
+            label.style.transform = `rotate(${labelAngle}deg) translate(0, -100px) rotate(-90deg)`;
+
+            segDiv.appendChild(label);
+            wheel.appendChild(segDiv);
+        });
+    }
+
+    function spinWheel() {
+        if (isSpinning) return;
+
+        if (savedGameData.player.tickets > 0) {
+            savedGameData.player.tickets--;
+        } else if (savedGameData.player.plai >= 5) {
+            if (!spendPLAI(5)) { // spendPLAI should return true on success
+            
+                showRewardNotification("⚠️ Something went wrong with the PLAI transaction.");
+                return;
+            }
+             showRewardNotification(`-5 PLAI used for a spin!`);
+        } else {
+            showRewardNotification("❌ Not enough tickets or PLAI to spin!");
+            return;
+        }
+
+        isSpinning = true;
+        document.getElementById('spinButton').disabled = true;
+        document.getElementById('lastPrizeDisplay').textContent = 'Spinning...';
+
+        // Calculate target rotation
+        const minSpins = 4;
+        const maxSpins = 8;
+        const randomSpins = Math.floor(Math.random() * (maxSpins - minSpins + 1)) + minSpins;
+        const targetSegment = Math.floor(Math.random() * wheelSegments.length);
+        const segmentAngle = 360 / wheelSegments.length;
+        const targetAngle = targetSegment * segmentAngle;
+        
+        // Add extra offset to land in middle of segment, and account for pointer being at top (0 degrees)
+        const finalAngle = (randomSpins * 360) + (360 - targetAngle) - (segmentAngle / 2);
+
+        const wheel = document.getElementById('wheel');
+        wheel.style.transform = `rotate(${finalAngle}deg)`;
+
+        setTimeout(() => {
+            isSpinning = false;
+            document.getElementById('spinButton').disabled = false;
+            const winningSegment = wheelSegments[targetSegment];
+            handlePrize(winningSegment);
+            // Update displays
+            document.getElementById('wheelTickets').textContent = savedGameData.player.tickets;
+            document.getElementById('wheelPLAI').textContent = savedGameData.player.plai;
+            updateHomeScreen(); // To reflect potential PLAI spend
+        }, 4000); // Match CSS transition duration
+    }
+
+    function handlePrize(prize) {
+        let prizeMessage = '';
+        if (prize.type === 'nothing') {
+            prizeMessage = "💔 Better luck next time!";
+        } else if (prize.type === 'gold') {
+            savedGameData.player.gold += prize.amount;
+            prizeMessage = `🪙 You won ${prize.amount} Gold!`;
+            updatePassBalances();
+        } else if (prize.type === 'plai') {
+            if (savedGameData.global.ecosystemData.jumpPassPool >= prize.amount) {
+                savedGameData.global.ecosystemData.jumpPassPool -= prize.amount;
+                savedGameData.player.plai += prize.amount;
+                prizeMessage = `💎 You won ${prize.amount} PLAI!`;
+                updateVaultScreen(); // Update pool display
+                updatePassBalances();
+            } else {
+                const goldConversion = prize.amount * 50;
+                savedGameData.player.gold += goldConversion;
+                prizeMessage = `💎 PLAI pool is empty! You received ${goldConversion} Gold instead.`;
+                updatePassBalances();
+            }
+        }
+        document.getElementById('lastPrizeDisplay').textContent = prizeMessage;
+        showRewardNotification(prizeMessage);
+    }
+
+    function playAgain() {
+        hideAllMenus();
+        startGame();
+    }
+    </script>
+
+    <script>
+    async function connectWallet() {
+    // Wait for DOMContentLoaded to ensure MetaMask is injected
+    if (typeof window.ethereum === 'undefined') {
+        alert("MetaMask is not installed. Please install MetaMask to connect your wallet.");
+        return;
+    }
+    try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const account = accounts[0];
+        savedGameData.player.wallet = account;
+        saveAllData();
+        document.getElementById('walletMenu').style.display = 'none';
+        if (!savedGameData.player.username) {
+            document.getElementById('usernameMenu').style.display = 'block';
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('usernameError').textContent = '';
+        } else {
+            goHome();
+        }
+    } catch (err) {
+        alert("Wallet connection failed: " + (err.message || err));
+    }
+}
+    </script>
+
+    <script>
+    function submitUsername() {
+        const input = document.getElementById('usernameInput');
+        const errorDiv = document.getElementById('usernameError');
+        let username = input.value.trim();
+
+        // Basic validation
+        if (username.length < 3) {
+            errorDiv.textContent = "Username must be at least 3 characters.";
+            return;
+        }
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            errorDiv.textContent = "Only letters, numbers, and underscores allowed.";
+            return;
+        }
+
+        // Save and continue
+        savedGameData.player.username = username;
+        saveAllData();
+        document.getElementById('usernameMenu').style.display = 'none';
+        goHome();
+    }
+    </script>
+
+    <script>
+    window.addEventListener('DOMContentLoaded', async function() {
+        if (window.ethereum && savedGameData.player.wallet) {
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0 && accounts[0] === savedGameData.player.wallet) {
+                    // Wallet is still connected
+                    updateHomeScreen();
+                } else {
+                    // Wallet is not connected anymore
+                    // Optionally, clear savedGameData.player.wallet here
+                }
+            } catch (e) {
+                // Handle error if needed
+            }
+        }
+    });
+    </script>
+    </body>
+</html>
