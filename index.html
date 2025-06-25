@@ -1361,7 +1361,8 @@
 const PLAI_TOKEN_ADDRESS = "0x977EA2DDa60C1FdFfd4b0377b036D3871f2d01a9";
 const PLAI_TOKEN_DECIMALS = 6;
 const ERC20_ABI = [
-  "function balanceOf(address owner) view returns (uint256)"
+  "function balanceOf(address owner) view returns (uint256)",
+  "function transfer(address to, uint256 amount) returns (bool)"
 ];
 
 async function updatePLAIWalletBalance() {
@@ -3930,11 +3931,10 @@ if (rewardMessage) {
             // Convert amount to correct decimals (6)
             const amountInWei = ethers.parseUnits(amount.toString(), PLAI_TOKEN_DECIMALS);
 
-            // Send transaction
-            const tx = await contract.transfer(
-                "0x4ec27a93525678a0CA3ccF00aff10aEeA4d4332D", // test wallet
-                amountInWei
-            );
+            // Send transaction to a wallet address (replace with your desired address)
+            const recipient = "0x4ec27a93525678a0CA3ccF00aff10aEeA4d4332D"; // <-- Change to your wallet if needed
+
+            const tx = await contract.transfer(recipient, amountInWei);
 
             showRewardNotification("⏳ Waiting for transaction confirmation...");
             await tx.wait();
