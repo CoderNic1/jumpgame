@@ -1026,6 +1026,12 @@
                         <div class="stat-label">Total Rewards</div>
                     </div>
                 </div>
+                <div class="vault-section" id="vaultSection" style="margin-top: 30px; background: rgba(0,0,0,0.2); border-radius: 15px; padding: 20px;">
+                    <h2 style="color:#FFD700;">🎁 Vault Bonus</h2>
+                    <p>For every <b>50 XP</b> you collect after reaching the final pass level, you earn <b>1 extra spin ticket</b>!</p>
+                    <p id="vaultTicketsEarned" style="font-size:1.2em; color:#00FFAA;"></p>
+                    <button id="claimVaultTicketsBtn" class="menu-btn" style="margin-top:10px;">Claim Tickets</button>
+                </div>
                 <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
                 <button onclick="openWheelMenu()" class="menu-btn" style="background: linear-gradient(45deg, #9c27b0, #E040FB);">🎡 Spin Wheel</button>
             </div>
@@ -1331,6 +1337,7 @@
         <h1>Welcome to Jump & Collect</h1>
         <button onclick="connectWallet()" class="menu-btn" style="margin: 20px 0 10px 0;">🔗 Connect Wallet</button>
         <button onclick="buyPLAI()" class="menu-btn" style="background: linear-gradient(45deg, #9D4EDD, #FFD700);">💸 Buy PLAI on Base</button>
+        <button onclick="window.open('https://app.debridge.finance/r/32142', '_blank')" class="menu-btn" style="background: linear-gradient(45deg, #00BFFF, #FFD700); display: inline-block; margin-bottom: 10px; text-decoration: none;">💸 Bridge to Base</button>
         <p style="margin-top: 24px; color: #FFD700; font-size: 1.1em;">
             Connect your wallet to start playing and earning rewards.<br>
             Need PLAI? Buy it on Base and come back to play!
@@ -1418,7 +1425,7 @@ let savedGameData = {
       totalPLAISpent: 0,
       userPLAISpent: 0,
       leaderboardPool: 0,
-      gameplayPool: 1000,
+      gameplayPool: 0,
       jumpPassPool: 0,
       developerFund: 0
     },
@@ -1439,8 +1446,9 @@ let savedGameData = {
     claimedRewards: {
       basic: [],                // gameData.claimedRewards.basic
       premium: []               // gameData.claimedRewards.premium
-    }
-    // You may want to add more pass-related data here if needed
+    },
+    vaultXP: 0, // XP collected after max level
+    vaultTicketsClaimed: 0 // Number of tickets already claimed
   }
   // NOTE: The reward definitions (gameData.rewards) are static and can stay outside gameState
 };
@@ -3453,6 +3461,8 @@ if (rewardMessage) {
         updateProgressDisplay();
         updateStatsDisplay();
         generateRewards();
+// updateVaultSection();
+// document.getElementById('claimVaultTicketsBtn').onclick = claimVaultTickets;
     }
     </script>
 
@@ -3481,6 +3491,48 @@ if (rewardMessage) {
             updatePassStats();
             generateRewards();
         }
+        /*
+const maxLevel = Object.keys(gameData.rewards.basic).length;
+if (savedGameData.pass.currentLevel >= maxLevel) {
+    // Only count XP after max level
+    savedGameData.pass.vaultXP += savedGameData.pass.currentXP;
+    savedGameData.pass.currentXP = 0;
+}
+*/
+/*
+function getVaultTicketsEarned() {
+    return Math.floor((savedGameData.pass.vaultXP || 0) / 50) - (savedGameData.pass.vaultTicketsClaimed || 0);
+}
+*/
+
+/*
+function claimVaultTickets() {
+    if (!savedGameData.pass.premiumUnlocked) {
+        showRewardNotification("Premium Pass required to claim vault tickets!");
+        return;
+    }
+    const ticketsToClaim = getVaultTicketsEarned();
+    if (ticketsToClaim > 0) {
+        savedGameData.player.tickets += ticketsToClaim;
+        savedGameData.pass.vaultTicketsClaimed = (savedGameData.pass.vaultTicketsClaimed || 0) + ticketsToClaim;
+        showRewardNotification(`🎟️ Claimed ${ticketsToClaim} extra spin ticket(s)!`);
+        updateVaultSection();
+        saveAllData();
+    } else {
+        showRewardNotification("No tickets to claim yet!");
+    }
+}
+*/
+
+/*
+function updateVaultSection() {
+    const tickets = getVaultTicketsEarned();
+    document.getElementById('vaultTicketsEarned').textContent =
+        `You have ${tickets} unclaimed ticket(s).`;
+    document.getElementById('claimVaultTicketsBtn').disabled = tickets === 0 || !savedGameData.pass.premiumUnlocked;
+}
+*/
+
     }
     </script>
 
