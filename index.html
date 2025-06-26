@@ -1026,12 +1026,14 @@
                         <div class="stat-label">Total Rewards</div>
                     </div>
                 </div>
+                <!-- TODO: uncomment this section to release
                 <div class="vault-section" id="vaultSection" style="margin-top: 30px; background: rgba(0,0,0,0.2); border-radius: 15px; padding: 20px;">
                     <h2 style="color:#FFD700;">🎁 Vault Bonus</h2>
-                    <p>For every <b>50 XP</b> you collect after reaching the final pass level, you earn <b>1 extra spin ticket</b>!</p>
+                    <p>For every <b>50 XP</b> you collect after reaching the final pass level as premium member, you earn <b>1 extra spin ticket</b>!</p>
                     <p id="vaultTicketsEarned" style="font-size:1.2em; color:#00FFAA;"></p>
                     <button id="claimVaultTicketsBtn" class="menu-btn" style="margin-top:10px;">Claim Tickets</button>
                 </div>
+                -->
                 <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
                 <button onclick="openWheelMenu()" class="menu-btn" style="background: linear-gradient(45deg, #9c27b0, #E040FB);">🎡 Spin Wheel</button>
             </div>
@@ -1125,6 +1127,32 @@
                     <button onclick="buyUpgrade('jump')" id="jumpButton">Buy</button>
                 </div>
                 
+
+                <div class="shop-section" id="premiumSubSection" style="display:block;">
+                    <h2>🌟 Premium Subscription</h2>
+                    <div class="shop-item">
+                        <div class="shop-item-info">
+                            <div class="shop-item-name">Premium Subscription (7 days)</div>
+                            <div class="shop-item-desc">
+                                <ul style="text-align:left; margin:0 0 0 1em; color:#FFD700;">
+                                    <li>+10% XP from tasks</li>
+                                    <li>3 free spin tickets (once per sub)</li>
+                                    <li>Spikes only -15s instead of -20s</li>
+                                    <li>Task reroll price -20%</li>
+                                    <li>+1 extra daily task slot (4 total)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="shop-item-price">
+                            <div class="plai-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                            99.99
+                        </div>
+                        <button id="buyPremiumSubBtn" onclick="buyPremiumSub()" class="menu-btn">Buy</button>
+                        <span id="premiumSubStatus" style="margin-left:10px; color:#00FFAA;"></span>
+                    </div>
+                </div>
+
+
                 <div class="shop-item">
                     <div class="shop-item-info">
                         <div class="shop-item-name">Extra Time</div>
@@ -1409,7 +1437,12 @@ let savedGameData = {
       magnetPowerUnlocked: false,
       giftSpeedLevel: 0,
       giftSpeedMaxLevel: 5,
-      jumpMaxLevel: 10
+      jumpMaxLevel: 10,
+      premiumSub: {
+        active: false,
+        expires: 0, // timestamp in ms
+        freeTicketsClaimed: false // to prevent double-claiming
+      },
     },
     userItems: {                // userItems
       unlocked: ['skin_red', 'bg_default', 'fx_none'],
@@ -1690,7 +1723,8 @@ const TASK_POOL = [
         function generateTasks(isDaily) {
             const tasks = [];
             const usedTypes = [];
-            for (let i = 0; i < 3; i++) {
+            const numTasks = isDaily && isPremiumSubActive() ? 4 : 3;
+            for (let i = 0; i < numTasks; i++) {
                 const t = getRandomTask(isDaily, usedTypes);
                 usedTypes.push(t.type);
                 tasks.push(t);
@@ -2246,6 +2280,39 @@ function updateVaultScreen() {
     		}
 	}
 }
+
+function isPremiumSubActive() {
+    return savedGameData.player.premiumSub.active && savedGameData.player.premiumSub.expires > Date.now();
+}
+
+async function buyPremiumSub() {
+    if (isPremiumSubActive()) {
+        showRewardNotification("You already have an active subscription!");
+        return;
+    }
+    if (await sendPLAI(99.99)) {
+        savedGameData.player.premiumSub.active = true;
+        savedGameData.player.premiumSub.expires = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+        savedGameData.player.premiumSub.freeTicketsClaimed = false;
+        showRewardNotification("🌟 Premium Subscription activated for 7 days!");
+        updateShopScreen();
+        saveAllData();
+    }
+}
+
+function updateShopScreen() {
+    // ...existing code...
+    // Premium Sub status
+    const subStatus = document.getElementById('premiumSubStatus');
+    if (isPremiumSubActive()) {
+        const daysLeft = Math.ceil((savedGameData.player.premiumSub.expires - Date.now()) / (24*60*60*1000));
+        subStatus.textContent = `Active (${daysLeft}d left)`;
+        document.getElementById('buyPremiumSubBtn').disabled = true;
+    } else {
+        subStatus.textContent = '';
+        document.getElementById('buyPremiumSubBtn').disabled = false;
+    }
+}
         
         function selectAvatar(index) {
             if (savedGameData.player.upgrades.ownedAvatars.includes(index)) {
@@ -2538,12 +2605,13 @@ function updateVaultScreen() {
             		spike.y < player.y + player.height &&
             		spike.y + spikeSize > player.y) {
             		spike.hit = true;
-            		timeLeft -= 20; // Decrease time by 20 seconds
+            		const spikePenalty = isPremiumSubActive() ? 15 : 20;
+            		timeLeft -= spikePenalty;
             		timeLeftElement.textContent = timeLeft;
             
             		// Show hit message
             		spikeHitMessage = {
-               		 text: "You lost 20s!",
+               		 text: "You lost " + spikePenalty + "s!",
                		 x: player.x,
                		 y: player.y - 30,
                		 opacity: 1,
@@ -3007,7 +3075,8 @@ if (rewardMessage) {
             document.getElementById('tasksXP').textContent = savedGameData.pass.currentXP;
             const tasks = showingDailyTasks ? savedGameData.tasks.daily : savedGameData.tasks.weekly;
             const tasksList = document.getElementById('tasksList');
-            const rerollCost = showingDailyTasks ? 10 : 50;
+            let rerollCost = showingDailyTasks ? 10 : 50;
+            if (isPremiumSubActive()) rerollCost = Math.floor(rerollCost * 0.8);
             const now = Date.now();
 
 
@@ -3082,6 +3151,7 @@ if (rewardMessage) {
             if (!task.completed && task.progress >= task.goal) {
                 checkActiveBoosters();
                 const xpGained = Math.round(task.xp * savedGameData.activeBoosters.xp.multiplier);
+                if (isPremiumSubActive()) xpGained = Math.round(xpGained * 1.1);
                 savedGameData.player.totalXP += xpGained;
                 // Add XP to pass
                 savedGameData.pass.currentXP += xpGained;
@@ -3461,8 +3531,8 @@ if (rewardMessage) {
         updateProgressDisplay();
         updateStatsDisplay();
         generateRewards();
-// updateVaultSection();
-// document.getElementById('claimVaultTicketsBtn').onclick = claimVaultTickets;
+        updateVaultSection();
+        document.getElementById('claimVaultTicketsBtn').onclick = claimVaultTickets;
     }
     </script>
 
@@ -3491,21 +3561,20 @@ if (rewardMessage) {
             updatePassStats();
             generateRewards();
         }
-        /*
-const maxLevel = Object.keys(gameData.rewards.basic).length;
+        const maxLevel = Object.keys(gameData.rewards.basic).length;
 if (savedGameData.pass.currentLevel >= maxLevel) {
     // Only count XP after max level
     savedGameData.pass.vaultXP += savedGameData.pass.currentXP;
     savedGameData.pass.currentXP = 0;
 }
-*/
-/*
+
+
 function getVaultTicketsEarned() {
     return Math.floor((savedGameData.pass.vaultXP || 0) / 50) - (savedGameData.pass.vaultTicketsClaimed || 0);
 }
-*/
 
-/*
+
+
 function claimVaultTickets() {
     if (!savedGameData.pass.premiumUnlocked) {
         showRewardNotification("Premium Pass required to claim vault tickets!");
@@ -3522,16 +3591,17 @@ function claimVaultTickets() {
         showRewardNotification("No tickets to claim yet!");
     }
 }
-*/
 
-/*
+
+
 function updateVaultSection() {
     const tickets = getVaultTicketsEarned();
     document.getElementById('vaultTicketsEarned').textContent =
         `You have ${tickets} unclaimed ticket(s).`;
     document.getElementById('claimVaultTicketsBtn').disabled = tickets === 0 || !savedGameData.pass.premiumUnlocked;
 }
-*/
+
+
 
     }
     </script>
@@ -3976,6 +4046,13 @@ function updateVaultSection() {
 
     <script>
     async function sendPLAI(amount) {
+        if (isPremiumSubActive() && !savedGameData.player.premiumSub.freeTicketsClaimed) {
+    savedGameData.player.tickets += 3; // buying a subscription gives 3 free spin tickets
+    savedGameData.player.premiumSub.freeTicketsClaimed = true;
+    showRewardNotification("🎟️ 3 free spin tickets added!");
+    saveAllData();
+        }
+
         if (!window.ethereum || !savedGameData.player.wallet) {
             showRewardNotification("❌ Connect your wallet first.");
             return false;
