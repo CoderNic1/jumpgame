@@ -1940,6 +1940,53 @@ const TASK_POOL = [
         }
     }
 
+    function repairCorruptedGameData() {
+    let changed = false;
+
+    // 1. Fix leaderboard arrays
+    if (!Array.isArray(savedGameData.global.leaderboard)) {
+        savedGameData.global.leaderboard = [];
+        changed = true;
+    }
+    if (!Array.isArray(savedGameData.global.previousLeaderboard)) {
+        savedGameData.global.previousLeaderboard = [];
+        changed = true;
+    }
+
+    // 2. Fix leaderboard reset timestamp
+    if (typeof savedGameData.global.leaderboardReset !== 'number' || isNaN(savedGameData.global.leaderboardReset)) {
+        // Set to next Sunday UTC
+        savedGameData.global.leaderboardReset = getNextLeaderboardResetUTC ? getNextLeaderboardResetUTC() : Date.now() + 7*24*60*60*1000;
+        changed = true;
+    }
+
+    // 3. Fix tasks arrays
+    if (!Array.isArray(savedGameData.tasks.daily)) {
+        savedGameData.tasks.daily = [];
+        changed = true;
+    }
+    if (!Array.isArray(savedGameData.tasks.weekly)) {
+        savedGameData.tasks.weekly = [];
+        changed = true;
+    }
+
+    // 4. Fix task reset timestamps
+    if (typeof savedGameData.tasks.dailyReset !== 'number' || isNaN(savedGameData.tasks.dailyReset)) {
+        savedGameData.tasks.dailyReset = getNextDailyResetUTC ? getNextDailyResetUTC() : Date.now() + 24*60*60*1000;
+        changed = true;
+    }
+    if (typeof savedGameData.tasks.weeklyReset !== 'number' || isNaN(savedGameData.tasks.weeklyReset)) {
+        savedGameData.tasks.weeklyReset = getNextWeeklyResetUTC ? getNextWeeklyResetUTC() : Date.now() + 7*24*60*60*1000;
+        changed = true;
+    }
+
+    // 5. Save if anything was fixed
+    if (changed) {
+        saveAllData && saveAllData();
+        console.log("Corrupted game data repaired.");
+    }
+}
+
         // Call this once at game start:
         repairCorruptedGameData();
         resetTasksIfNeeded();
@@ -1991,9 +2038,9 @@ const TASK_POOL = [
             coins = [];
             clocks = [];
             magnets = [];
-	    spikes = [];
-	    gifts = [];
-	    spikeHitMessage = null;
+	        spikes = [];
+	        gifts = [];
+	        spikeHitMessage = null;
             magnetActive = false;
             magnetTimeLeft = 0;
             magnetStatus.style.display = 'none';
@@ -4575,52 +4622,7 @@ function showGoldRushResultOnLogin() {
     return false;
 }
 
-function repairCorruptedGameData() {
-    let changed = false;
 
-    // 1. Fix leaderboard arrays
-    if (!Array.isArray(savedGameData.global.leaderboard)) {
-        savedGameData.global.leaderboard = [];
-        changed = true;
-    }
-    if (!Array.isArray(savedGameData.global.previousLeaderboard)) {
-        savedGameData.global.previousLeaderboard = [];
-        changed = true;
-    }
-
-    // 2. Fix leaderboard reset timestamp
-    if (typeof savedGameData.global.leaderboardReset !== 'number' || isNaN(savedGameData.global.leaderboardReset)) {
-        // Set to next Sunday UTC
-        savedGameData.global.leaderboardReset = getNextLeaderboardResetUTC ? getNextLeaderboardResetUTC() : Date.now() + 7*24*60*60*1000;
-        changed = true;
-    }
-
-    // 3. Fix tasks arrays
-    if (!Array.isArray(savedGameData.tasks.daily)) {
-        savedGameData.tasks.daily = [];
-        changed = true;
-    }
-    if (!Array.isArray(savedGameData.tasks.weekly)) {
-        savedGameData.tasks.weekly = [];
-        changed = true;
-    }
-
-    // 4. Fix task reset timestamps
-    if (typeof savedGameData.tasks.dailyReset !== 'number' || isNaN(savedGameData.tasks.dailyReset)) {
-        savedGameData.tasks.dailyReset = getNextDailyResetUTC ? getNextDailyResetUTC() : Date.now() + 24*60*60*1000;
-        changed = true;
-    }
-    if (typeof savedGameData.tasks.weeklyReset !== 'number' || isNaN(savedGameData.tasks.weeklyReset)) {
-        savedGameData.tasks.weeklyReset = getNextWeeklyResetUTC ? getNextWeeklyResetUTC() : Date.now() + 7*24*60*60*1000;
-        changed = true;
-    }
-
-    // 5. Save if anything was fixed
-    if (changed) {
-        saveAllData && saveAllData();
-        console.log("Corrupted game data repaired.");
-    }
-}
 
 if (window.ethereum) {
         window.ethereum.on('chainChanged', (chainId) => {
