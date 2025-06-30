@@ -3818,6 +3818,8 @@ if (rewardMessage) {
     const now = new Date();
     savedGameData.pass.lastResetMonth = now.getUTCFullYear() + '-' + now.getUTCMonth();
     saveAllData();
+    // Show reset notification
+    showRewardNotification("🎉 New season! Your Jump Pass has been reset for the new month.");
 }
 
     function openJumpPass() {
