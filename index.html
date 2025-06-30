@@ -194,6 +194,9 @@
             font-size: clamp(18px, 6vw, 24px) !important;
             line-height: 1.1;
                 }
+                .event-box {
+                margin: 10px 0;
+                padding: 12px;}
         }
         
         @media (min-width: 1200px) {
@@ -901,7 +904,23 @@
             .currency-display {
                 font-size: clamp(16px, 4vw, 18px);
             }
+            .event-box {
+            background: rgba(255, 215, 0, 0.12);
+            border: 2px solid #FFD700;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px 0;
+            width: 100%;
+            box-sizing: border-box;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: box-shadow 0.2s;
+            max-width: 100%;
+            }
+
         
+            
             </style>
     <script src="https://cdn.jsdelivr.net/npm/@metamask/sdk/dist/metamask-sdk.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
@@ -947,13 +966,14 @@
 		<button onclick="openVault()">💰 Game Vault</button>
   		<button onclick="openJumpPass()">🎫 Jump Pass</button>
   		<button onclick="openTasks()">📅 Tasks</button>
+        <!--<button onclick="openEventsMenu()">🎉 Events</button>  TODO: change to openEventsMenu() -->
 	</div>
 
     <p id="welcomeUser" style="font-size:1.1em; color:#FFD700; margin-top:10px; margin-bottom:0;"></p>
     <p>Click and jump, collect as much as possible!</p>
 	<p>Make sure to only collect the coins and avoid the spikes.</p>
         </div>
-        <!-- Battke pass/jump pass menu -->
+        <!-- Battle pass/jump pass menu -->
         <div id="jumpPassMenu" class="menu" style="display: none;">
             <div class="battle-pass-container">
                 <div class="header">
@@ -1026,18 +1046,37 @@
                         <div class="stat-label">Total Rewards</div>
                     </div>
                 </div>
+                <!-- TODO: change the display none to block -->
+                <div class="vault-section" id="vaultSection" style="margin-top: 30px;display:none; background: rgba(0,0,0,0.2); border-radius: 15px; padding: 20px;">
+                    <h2 style="color:#FFD700;">🎁 Vault Bonus</h2>
+                    <p>For every <b>50 XP</b> you collect after reaching the final pass level as premium member, you earn <b>1 extra spin ticket</b>!</p>
+                    <p id="vaultTicketsEarned" style="font-size:1.2em; color:#00FFAA;"></p>
+                    <button id="claimVaultTicketsBtn" class="menu-btn" style="margin-top:10px;">Claim Tickets</button>
+                </div>
                 <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
                 <button onclick="openWheelMenu()" class="menu-btn" style="background: linear-gradient(45deg, #9c27b0, #E040FB);">🎡 Spin Wheel</button>
             </div>
         </div>
 
+    <!-- event  Menu -->
+        <div id="eventsMenu" class="menu" style="display: none;">
+            <h2>🎉 Events</h2>
+            <div id="eventsList"></div>
+            <button onclick="goHome()" class="back-button">🏠 Back to Home</button>
+          </div>
+
+          <div id="goldRushMenu" class="menu" style="display: none;">
+            <h2>🌟 Gold Rush</h2>
+            <div id="goldRushContent"></div>
+            <button onclick="openEventsMenu()" class="back-button">⬅️ Back to Events</button>
+          </div>
 
     <!-- Game Vault Menu -->
         <div id="vaultMenu" class="menu" style="display: none;">
             <h1>💰 Game Vault</h1>
             <div class="currency-display">
                 <div class="plai-icon"></div>
-                <span>Your PLAI: <span id="vaultUserPLAI">1000</span></span>
+                <span>Your PLAI: <span id="vaultUserPLAI">undefined</span></span>
             </div>
             
             <div class="stats">
@@ -1102,7 +1141,7 @@
                 <div class="coin-icon"></div>
                 <span>Gold: <span id="shopGold">0</span></span>
                 <div class="plai-icon" style="margin-left: 20px;"></div>
-                <span>PLAI: <span id="shopPLAI">1000</span></span>
+                <span>PLAI: <span id="shopPLAI">undefined</span></span>
             </div>
             
             <div class="shop-section">
@@ -1119,6 +1158,10 @@
                     <button onclick="buyUpgrade('jump')" id="jumpButton">Buy</button>
                 </div>
                 
+
+
+
+
                 <div class="shop-item">
                     <div class="shop-item-info">
                         <div class="shop-item-name">Extra Time</div>
@@ -1131,7 +1174,29 @@
                     <button onclick="buyUpgrade('time')" id="timeButton">Buy</button>
                 </div>
             </div>
-            
+
+            <div class="shop-section" id="premiumSubSection" style="display:none;"> // change display none to block
+                <h2>🌟 Premium Subscription</h2>
+                <div class="shop-item">
+                    <div class="shop-item-info">
+                        <div class="shop-item-name">Premium Subscription (7 days)</div>
+                        <div class="shop-item-desc">
+                            <ul style="text-align:left; margin:0 0 0 1em; color:#FFD700;">
+                                <li>+10% XP from tasks</li>
+                                <li>3 free spin tickets (once per sub)</li>
+                                <li>Spikes only -15s instead of -20s</li>
+                                <li>Task reroll price -20%</li>
+                                <li>+1 extra daily task slot (4 total)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="shop-item-price">
+                        <div class="plai-icon" style="width: 16px; height: 16px; margin-right: 4px;"></div>
+                        99.99
+                    </div>
+                    <button id="buyPremiumSubBtn" onclick="buyPremiumSub()" class="menu-btn">Buy</button>
+                </div>
+            </div>
                        
             <div class="shop-section">
                 <h2>💎 Premium Boosters</h2>
@@ -1331,6 +1396,7 @@
         <h1>Welcome to Jump & Collect</h1>
         <button onclick="connectWallet()" class="menu-btn" style="margin: 20px 0 10px 0;">🔗 Connect Wallet</button>
         <button onclick="buyPLAI()" class="menu-btn" style="background: linear-gradient(45deg, #9D4EDD, #FFD700);">💸 Buy PLAI on Base</button>
+        <button onclick="window.open('https://app.debridge.finance/r/32142', '_blank')" class="menu-btn" style="background: linear-gradient(45deg, #00BFFF, #FFD700); display: inline-block; margin-bottom: 10px; text-decoration: none;">💸 Bridge to Base</button>
         <p style="margin-top: 24px; color: #FFD700; font-size: 1.1em;">
             Connect your wallet to start playing and earning rewards.<br>
             Need PLAI? Buy it on Base and come back to play!
@@ -1365,7 +1431,7 @@ const ERC20_ABI = [
   "function balanceOf(address owner) view returns (uint256)",
   "function transfer(address to, uint256 amount) returns (bool)"
 ];
-
+let leaderboardTimerInterval = null;
 async function updatePLAIWalletBalance() {
     if (!window.ethereum || !savedGameData.player.wallet) return;
 
@@ -1386,7 +1452,77 @@ async function updatePLAIWalletBalance() {
         console.error("Failed to fetch PLAI balance:", err);
     }
 }
+const DEFAULT_SAVED_GAME_DATA = {
+    player: {
+        gold: 0,
+        plai: 0,
+        tickets: 0,
+        highScore: 0,
+        gamesPlayed: 0,
+        totalXP: 0,
+        upgrades: {
+            jumpLevel: 1,
+            timeLevel: 0,
+            clockDropsUnlocked: false,
+            magnetPowerUnlocked: false,
+            giftSpeedLevel: 0,
+            giftSpeedMaxLevel: 5,
+            jumpMaxLevel: 10,
+            premiumSub: {
+                active: false,
+                expires: 0,
+                freeTicketsClaimed: false
+            }
+        },
+        userItems: {
+            unlocked: ['skin_red', 'bg_default', 'fx_none'],
+            selected: { skin: 'skin_red', background: 'bg_default', effect: 'fx_none' }
+        },
+        goldRush: {
+            deposited: 0,
+            lastDraw: 0,
+            result: null,
+            hasClaimed: false,
+            goldRushResultSeen: 0
+        }
+    },
+    global: {
+        ecosystemData: {
+            totalPLAISpent: 0,
+            userPLAISpent: 0,
+            leaderboardPool: 0,
+            gameplayPool: 0,
+            jumpPassPool: 0,
+            developerFund: 0
+        },
+        leaderboard: [],
+        previousLeaderboard: []
+    },
+    tasks: {
+        daily: [],
+        weekly: [],
+        dailyReset: 0,
+        weeklyReset: 0
+    },
+    pass: {
+        currentLevel: 1,
+        currentXP: 0,
+        xpToNext: 50,
+        premiumUnlocked: false,
+        claimedRewards: {
+            basic: [],
+            premium: []
+        },
+        vaultXP: 0,
+        vaultTicketsClaimed: 0
+    },
+    activeBoosters: {
+        xp: { multiplier: 1, expires: 0 },
+        coins: { multiplier: 1, expires: 0 }
+    },
 
+};
+/*
 let savedGameData = {
     player: {
         gold: 0,                // BALANCE.gold
@@ -1402,13 +1538,25 @@ let savedGameData = {
       magnetPowerUnlocked: false,
       giftSpeedLevel: 0,
       giftSpeedMaxLevel: 5,
-      jumpMaxLevel: 10
-    },
+      jumpMaxLevel: 10,
+      premiumSub: {
+        active: false,
+        expires: 0, // timestamp in ms
+        freeTicketsClaimed: false // to prevent double-claiming
+      },
+
     userItems: {                // userItems
       unlocked: ['skin_red', 'bg_default', 'fx_none'],
       selected: { skin: 'skin_red', background: 'bg_default', effect: 'fx_none' }
     }
   },
+  goldRush: {
+        deposited: 0,         // Gold deposited this round
+        lastDraw: 0,          // Timestamp of last draw
+        result: null,         // {won: true/false, prize: n, refunded: true/false}
+        hasClaimed: false,     // Did the user claim their result?
+        goldRushResultSeen: 0, // timestamp of last result shown
+    },
   activeBoosters: {
     xp: { multiplier: 1, expires: 0 },
     coins: { multiplier: 1, expires: 0 }
@@ -1418,7 +1566,7 @@ let savedGameData = {
       totalPLAISpent: 0,
       userPLAISpent: 0,
       leaderboardPool: 0,
-      gameplayPool: 1000,
+      gameplayPool: 0,
       jumpPassPool: 0,
       developerFund: 0
     },
@@ -1439,11 +1587,15 @@ let savedGameData = {
     claimedRewards: {
       basic: [],                // gameData.claimedRewards.basic
       premium: []               // gameData.claimedRewards.premium
-    }
-    // You may want to add more pass-related data here if needed
+    },
+    vaultXP: 0, // XP collected after max level
+    vaultTicketsClaimed: 0 // Number of tickets already claimed
   }
   // NOTE: The reward definitions (gameData.rewards) are static and can stay outside gameState
-};
+    }
+
+}*/
+
     let metamask, ethereum;
     if (window.MetaMaskSDK) {
         metamask = new window.MetaMaskSDK.MetaMaskSDK();
@@ -1540,15 +1692,34 @@ let savedGameData = {
             unlockButton: document.querySelector('.unlock-button')
         };
 
-
+        function deepMergeDefaults(target, defaults) {
+    for (const key in defaults) {
+        if (
+            typeof defaults[key] === 'object' &&
+            defaults[key] !== null &&
+            !Array.isArray(defaults[key])
+        ) {
+            if (!target[key]) target[key] = {};
+            deepMergeDefaults(target[key], defaults[key]);
+        } else if (target[key] === undefined) {
+            target[key] = defaults[key];
+        }
+    }
+    return target;
+}
 
         function saveAllData() {
             localStorage.setItem('savedGameData', JSON.stringify(savedGameData));
         }
-        function loadAllData() {
+
+function loadAllData() {
     const saved = localStorage.getItem('savedGameData');
     if (saved) {
-        Object.assign(savedGameData, JSON.parse(saved));
+        // Merge loaded data with defaults
+        savedGameData = deepMergeDefaults(JSON.parse(saved), JSON.parse(JSON.stringify(DEFAULT_SAVED_GAME_DATA)));
+    } else {
+        // No save found, use defaults
+        savedGameData = JSON.parse(JSON.stringify(DEFAULT_SAVED_GAME_DATA));
     }
 }
 
@@ -1633,12 +1804,16 @@ const TASK_POOL = [
     { type: "collect_clocks", isDaily: true, min: 2, max: 5, desc: n => `Collect ${n} clocks` },
     { type: "collect_magnets", isDaily: true, min: 1, max: 3, desc: n => `Collect ${n} magnets` },
     { type: "score_points", isDaily: true, min: 100, max: 300, desc: n => `Score ${n} points in total` },
+    { type: "play_time", isDaily: true, min: 60, max: 180, desc: n => `Play for ${n} seconds in total` },
+    { type: "spend_gold", isDaily: true, min: 100, max: 300, desc: n => `Spend ${n} gold` },
     // Weekly tasks (harder)
     { type: "play_games", isDaily: false, min: 10, max: 20, desc: n => `Play ${n} games` },
     { type: "collect_coins", isDaily: false, min: 200, max: 500, desc: n => `Collect ${n} coins` },
     { type: "collect_clocks", isDaily: false, min: 10, max: 20, desc: n => `Collect ${n} clocks` },
     { type: "collect_magnets", isDaily: false, min: 5, max: 10, desc: n => `Collect ${n} magnets` },
     { type: "score_points", isDaily: false, min: 2000, max: 5000, desc: n => `Score ${n} points in total` },
+    { type: "play_time", isDaily: false, min: 600, max: 1800, desc: n => `Play for ${Math.floor(n/60)} minutes in total` },
+    { type: "spend_gold", isDaily: false, min: 1000, max: 3000, desc: n => `Spend ${n} gold` },
 ];
 
 
@@ -1682,7 +1857,8 @@ const TASK_POOL = [
         function generateTasks(isDaily) {
             const tasks = [];
             const usedTypes = [];
-            for (let i = 0; i < 3; i++) {
+            const numTasks = isDaily && isPremiumSubActive() ? 4 : 3;
+            for (let i = 0; i < numTasks; i++) {
                 const t = getRandomTask(isDaily, usedTypes);
                 usedTypes.push(t.type);
                 tasks.push(t);
@@ -1698,13 +1874,13 @@ const TASK_POOL = [
                 savedGameData.tasks.daily= generateTasks(true);
                 savedGameData.tasks.dailyReset = getNextDailyResetUTC();
                 changed = true;
-            }
-            if (!savedGameData.global.previousLeaderboard || now > savedGameData.global.previousLeaderboard) {
+             }
+            if (!savedGameData.tasks.weeklyReset || now > savedGameData.tasks.weeklyReset) {
                 savedGameData.tasks.weekly = generateTasks(false);
-                savedGameData.global.previousLeaderboard = getNextWeeklyResetUTC();
+                savedGameData.tasks.weeklyReset = getNextWeeklyResetUTC();
                 changed = true;
-            }
 
+            }
         }
 
         function getNextLeaderboardResetUTC() {
@@ -1735,7 +1911,7 @@ const TASK_POOL = [
             // Distribute rewards (future: send PLAI, for now: just log)
             let leaderboard = savedGameData.global.leaderboard || [];
             savedGameData.global.leaderboard = savedGameData.global.leaderboard.slice(0, 20); // Top 20 for previous week
-            const totalReward = Math.floor(savedGameData.global.ecosystemData.leaderboardPool * 0.5);
+            const totalReward = Math.floor(savedGameData.global.ecosystemData.leaderboardPool * 0.5); // reward is 50% of the leaderboard pool
             let prevWeek = [];
             if (savedGameData.global.leaderboard.length > 0 && totalReward > 0) {
                 // Reward distribution for top 10 (example: 1st 25%, 2nd 18%, 3rd 13%, 4th 10%, 5th 8%, 6th 7%, 7th 6%, 8th 5%, 9th 4%, 10th 4%)
@@ -1745,25 +1921,27 @@ const TASK_POOL = [
                     if (i < 10) reward = Math.floor(totalReward * rewards[i]);
                     prevWeek.push({ name: entry.name, score: entry.score, reward });
                     if (reward > 0) {
-                        console.log(`Would reward ${entry.name} with ${reward} PLAI`);
+                        console.log(`Would reward ${entry.name} with ${reward} PLAI`); // future: send PLAI, for now: just log make sure to call the payoutPLAI function smart contract needed
                     }
                 });
                 savedGameData.global.ecosystemData.leaderboardPool -= totalReward;
             } else {
                 savedGameData.global.leaderboard.forEach(entry => prevWeek.push({ name: entry.name, score: entry.score, reward: 0 }));
             }
-            // Save previous week leaderboard
-            savedGameData.global.previousLeaderboard = prevWeek;
-            // Reset leaderboard
-            savedGameData.global.leaderboard = [];
-            // Set next reset
-            savedGameData.global.previousLeaderboardReset = getNextLeaderboardResetUTC();
-            saveLeaderboardReset(resetTime);
+
+            // At reset time:
+        savedGameData.global.previousLeaderboard = savedGameData.global.leaderboard.slice(); // Save the array
+        savedGameData.global.leaderboard = []; // Clear for new week
+        const newResetTime = getNextLeaderboardResetUTC();
+        savedGameData.global.leaderboardReset = newResetTime;
+        saveLeaderboardReset(newResetTime);
+        saveAllData();
+
         }
     }
 
         // Call this once at game start:
-
+        repairCorruptedGameData();
         resetTasksIfNeeded();
         resetLeaderboardIfNeeded()
 
@@ -1845,8 +2023,9 @@ const TASK_POOL = [
                 document.getElementById('timer').style.display = 'none';
             }
         }
-
+        let secondsPlayedThisGame = 0;
         function startGame() {
+            let secondsPlayedThisGame = 0;
             document.getElementById('ui').style.display = 'block';
             document.getElementById('timer').style.display = 'block';
             gameState = STATES.PLAYING;
@@ -1861,10 +2040,12 @@ const TASK_POOL = [
             // Start timer
             gameTimer = setInterval(() => {
                 timeLeft--;
+                secondsPlayedThisGame++;
                 timeLeftElement.textContent = timeLeft;
                 
                 if (timeLeft <= 0) {
                     endGame();
+                    return;
                 }
             }, 1000);
             
@@ -1884,6 +2065,8 @@ const TASK_POOL = [
         }
 
         function endGame() {
+            if (gameState === STATES.GAME_OVER) return; // Prevent double execution
+            updateAllTasksProgress("play_time", secondsPlayedThisGame);
             if (savedGameData.player.username) {
                 saveHighScore(savedGameData.player.username, score);
             }
@@ -1973,9 +2156,8 @@ const TASK_POOL = [
             document.getElementById('leaderboardResetTimer').textContent = resetText;
         }
 
-        let leaderboardTimerInterval = null;
 
-// ... existing code ...
+
 function showLeaderboardPage(page) {
             const leaderboardBody = document.getElementById('leaderboardBody');
             document.getElementById('currentLbTab').style.background = page === 'current' ? '#FFD700' : '';
@@ -2037,7 +2219,7 @@ function showLeaderboardPage(page) {
             }
         }
 
-
+ 
         function showLeaderboard() {
            gameState = STATES.LEADERBOARD;
            hideAllMenus();
@@ -2107,6 +2289,100 @@ function updateVaultScreen() {
         ((savedGameData.global.ecosystemData.userPLAISpent / savedGameData.global.ecosystemData.totalPLAISpent) * 100).toFixed(1) : '0';
     document.getElementById('userContribution').textContent = userContribution + '%';
 }
+
+function openGoldRush() {
+   if (!isGoldRushActive()) {
+       showRewardNotification("Gold Rush is not active right now. Please come back during the first week of the month!");
+       return;
+   }
+   // Only hide menus and show the event if active
+   hideAllMenus();
+   document.getElementById('goldRushMenu').style.display = 'block';
+   renderGoldRush();
+}
+
+   function renderGoldRush() {
+    if (!savedGameData.player.goldRush) {
+        savedGameData.player.goldRush = {
+            deposited: 0,
+            lastDraw: 0,
+            result: null,
+            hasClaimed: false,
+            goldRushResultSeen: 0,
+        };
+    }
+    const deposited = savedGameData.player.goldRush.deposited || 0;
+    const maxDeposit = 10000;
+    const canDeposit = isGoldRushActive();
+    const percent = Math.min(100, (deposited / maxDeposit) * 100);
+    const winChance = Math.min(90, (deposited / maxDeposit) * 90);
+
+    const rewards = [
+        { amount: 1, chance: 35 },
+        { amount: 2, chance: 25 },
+        { amount: 5, chance: 15 },
+        { amount: 7, chance: 10 },
+        { amount: 10, chance: 8 },
+        { amount: 15, chance: 5 },
+        { amount: 20, chance: 2 }
+    ];
+
+    let html = `
+        <div class="currency-display" style="justify-content: center; margin-bottom: 18px;">
+            <div class="coin-icon"></div>
+            <span style="font-size:1.1em;">Your Gold: <b>${savedGameData.player.gold}</b></span>
+        </div>
+        <div style="background:rgba(0,0,0,0.18); border-radius:16px; padding:18px 16px; margin-bottom:18px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+            <p style="margin-bottom:10px;">Deposit your gold for a chance to win a PLAI mystery box!<br>
+            The more you deposit, the higher your chance to win.</p>
+            <div style="font-weight:bold; color:#FFD700; margin-bottom:8px;">
+                Deposited: ${deposited} / ${maxDeposit}
+            </div>
+            <div style="background:#333; border-radius:8px; height:22px; width:100%; margin-bottom:10px; overflow:hidden;">
+                <div style="background:linear-gradient(90deg,#FFD700,#FFA500); width:${percent}%; height:100%;"></div>
+            </div>
+            <div style="margin-bottom:0; color:#FFD700; font-weight:bold;">
+                Current Win Chance: ${winChance.toFixed(1)}%
+            </div>
+        </div>
+        <div style="background:rgba(0,0,0,0.13); border-radius:14px; padding:14px 10px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+            <b style="color:#FFD700;">Possible Rewards if you win:</b>
+            <table style="width:100%; margin-top:8px; color:white; background:rgba(255,255,255,0.04); border-radius:8px; border-collapse:separate; border-spacing:0;">
+                <tr>
+                    <th style="padding:6px 0; color:#FFD700; font-size:1.08em;">PLAI</th>
+                    <th style="padding:6px 0; color:#FFD700; font-size:1.08em;">Chance</th>
+                </tr>
+                ${rewards.map(r => `
+                    <tr>
+                        <td style="padding:4px 0; text-align:center; font-weight:bold;">${r.amount}</td>
+                        <td style="padding:4px 0; text-align:center;">${r.chance}%</td>
+                    </tr>
+                `).join('')}
+            </table>
+            <div style="font-size:0.97em; color:#FFD700; margin-top:7px;">
+                (If you win, you get one of these at random)
+            </div>
+            <div style="font-size:0.93em; color:#FF8C00; margin-top:7px;">
+                <b>Note:</b> At full deposit (10,000 gold), your maximum win chance is <b>90%</b>.
+            </div>
+            <div style="font-size:0.93em; color:#FF4444; margin-top:7px;">
+            <b>Important:</b> If there is not enough $PLAI in the prize pool, your gold will be fully refunded instead of receiving PLAI.
+            </div>
+        </div>
+    `;
+
+    if (canDeposit) {
+        html += `
+            <input id="goldRushDepositInput" type="number" min="1" max="${maxDeposit - deposited}" placeholder="Amount to deposit" style="width:120px; margin-right:10px;">
+            <button onclick="depositGoldRush()">Deposit</button>
+        `;
+    } else {
+        html += `<p style="color:#FFD700;">Gold Rush is not active right now. Please come back during the first week of the month!</p>`;
+    }
+
+    document.getElementById('goldRushContent').innerHTML = html;
+}
+
         function openShop() {
             gameState = STATES.SHOP;
             hideAllMenus();
@@ -2124,6 +2400,8 @@ function updateVaultScreen() {
             vaultMenu.style.display = 'none';
             tasksMenu.style.display = 'none';
             skinsMenu.style.display = 'none';
+            eventsMenu.style.display = 'none';
+            goldRushMenu.style.display = 'none';
             document.getElementById('wheelMenu').style.display = 'none';
             document.getElementById('jumpPassMenu').style.display = 'none';
         }
@@ -2177,19 +2455,26 @@ function updateVaultScreen() {
 	    document.getElementById('giftSpeedButton').disabled = savedGameData.player.upgrades.giftSpeedLevel >= savedGameData.player.upgrades.giftSpeedMaxLevel || (savedGameData.player.plai+1) < giftSpeedCost;
 	    document.getElementById('giftSpeedButton').textContent = savedGameData.player.upgrades.giftSpeedLevel >= (savedGameData.player.upgrades.giftSpeedMaxLevel) ? 'Owned' : 'Buy';
             
-            // Update avatars
-            for (let i = 0; i < 4; i++) {
-                const avatar = document.getElementById(`avatar${i}`);
-                if (avatar) { // Only update if the element exists
-                    avatar.className = 'avatar-option';
-                    if (savedGameData.player.upgrades.ownedAvatars.includes(i)) {
-                        avatar.classList.add('owned');
-                    }
-                    if (savedGameData.player.upgrades.selectedAvatar === i) {
-                        avatar.classList.add('selected');
-                    }
-                }
-            }
+        const subBtn = document.getElementById('buyPremiumSubBtn');
+if (isPremiumSubActive()) {
+    const msLeft = savedGameData.player.premiumSub.expires - Date.now();
+    const days = Math.floor(msLeft / (24*60*60*1000));
+    const hours = Math.floor((msLeft % (24*60*60*1000)) / (60*60*1000));
+    const minutes = Math.floor((msLeft % (60*60*1000)) / (60*1000));
+    let timeLeft = '';
+    if (days > 0) {
+        timeLeft = `${days}d ${hours}h left`;
+    } else if (hours > 0) {
+        timeLeft = `${hours}h ${minutes}m left`;
+    } else {
+        timeLeft = `${minutes}m left`;
+    }
+    subBtn.textContent = `Active (${timeLeft})`;
+    subBtn.disabled = true;
+} else {
+    subBtn.textContent = 'Buy';
+    subBtn.disabled = false;
+}
         }
         
         function buyUpgrade(type) {
@@ -2201,6 +2486,7 @@ function updateVaultScreen() {
                 if (savedGameData.player.gold >= cost) {
                     savedGameData.player.gold -= cost;
                     savedGameData.player.upgrades.jumpLevel++;
+                    updateAllTasksProgress("spend_gold", amountSpent);
                     updateShopScreen();
                 }
             } else if (type === 'time') {
@@ -2208,6 +2494,7 @@ function updateVaultScreen() {
                 if (savedGameData.player.gold >= cost) {
                     savedGameData.player.gold -= cost;
                     savedGameData.player.upgrades.timeLevel++;
+                    updateAllTasksProgress("spend_gold", amountSpent);
                     updateShopScreen();
                 }
             }
@@ -2238,6 +2525,34 @@ function updateVaultScreen() {
     		}
 	}
 }
+
+function isPremiumSubActive() {
+
+    const sub = savedGameData.player.premiumSub;
+    return sub && sub.active && sub.expires > Date.now();
+}
+
+async function buyPremiumSub() {
+    if (isPremiumSubActive()) {
+        showRewardNotification("You already have an active subscription!");
+        return;
+    }
+    if (await sendPLAI(99.99)) {
+        savedGameData.player.premiumSub.active = true;
+        savedGameData.player.premiumSub.expires = Date.now() + 7 * 24 * 60 * 60 * 1000; // 7 days
+        savedGameData.player.premiumSub.freeTicketsClaimed = false;
+        showRewardNotification("🌟 Premium Subscription activated for 7 days!");
+        if (isPremiumSubActive() && !savedGameData.player.premiumSub.freeTicketsClaimed) {
+        savedGameData.player.tickets += 3; // buying a subscription gives 3 free spin tickets
+        savedGameData.player.premiumSub.freeTicketsClaimed = true;
+        showRewardNotification("🎟️ 3 free spin tickets added!");
+        saveAllData();
+        }
+        updateShopScreen();
+        saveAllData();
+    }
+}
+
         
         function selectAvatar(index) {
             if (savedGameData.player.upgrades.ownedAvatars.includes(index)) {
@@ -2246,16 +2561,6 @@ function updateVaultScreen() {
             }
         }
         
-        function selectOrBuyAvatar(index) {
-            if (savedGameData.player.upgrades.ownedAvatars.includes(index)) {
-                selectAvatar(index);
-            } else if (savedGameData.player.gold >= 75) {
-                savedGameData.player.gold -= 75;
-                savedGameData.player.upgrades.ownedAvatars.push(index);
-                savedGameData.player.upgrades.selectedAvatar = index;
-                updateShopScreen();
-            }
-        }
 
         function playAgain() {
             hideAllMenus();
@@ -2336,27 +2641,22 @@ function updateVaultScreen() {
             }, 1000);
         }
 
-	function processGiftReward() {
-    		const plaiChance = Math.random() < 0.2; // 20% chance for PLAI
-    		const plaiReward = Math.floor(Math.random() * 5) + 1; // 1-5 PLAI
-    
-    		if (plaiChance && savedGameData.global.ecosystemData.gameplayPool >= plaiReward) {
-        		// Award PLAI
-        		savedGameData.player.plai += plaiReward;
-        		savedGameData.global.ecosystemData.gameplayPool -= plaiReward;
-        
-        		// Show reward message
-        		showRewardMessage(`+${plaiReward} PLAI!`, '#9D4EDD');
-        		return;
-    			}
-    
-    		// Award coins instead
-    		const coinReward = Math.floor(Math.random() * 3) + 1; // 1-3 coins
-    		coinsCollectedThisGame += coinReward;
-    		updateUI();
-    		showRewardMessage(`+${coinReward} coins!`, '#FFD700');
-		}
+        function processGiftReward() {
+    const plaiChance = Math.random() < 0.2; // 20% chance for PLAI
+    const plaiReward = Math.floor(Math.random() * 5) + 1; // 1-5 PLAI
 
+    if (plaiChance && payoutPLAI(plaiReward, 'gameplayPool')) {
+        // Award PLAI
+        showRewardMessage(`+${plaiReward} PLAI!`, '#9D4EDD');
+        return;
+    }
+
+    // Award coins instead
+    const coinReward = Math.floor(Math.random() * 3) + 1; // 1-3 coins
+    coinsCollectedThisGame += coinReward;
+    updateUI();
+    showRewardMessage(`+${coinReward} coins!`, '#FFD700');
+}
 		function showRewardMessage(text, color) {
     		// Create floating reward message (similar to spike hit message)
     		rewardMessage = {
@@ -2530,12 +2830,13 @@ function updateVaultScreen() {
             		spike.y < player.y + player.height &&
             		spike.y + spikeSize > player.y) {
             		spike.hit = true;
-            		timeLeft -= 20; // Decrease time by 20 seconds
+            		const spikePenalty = isPremiumSubActive() ? 15 : 20;
+            		timeLeft -= spikePenalty;
             		timeLeftElement.textContent = timeLeft;
             
             		// Show hit message
             		spikeHitMessage = {
-               		 text: "You lost 20s!",
+               		 text: "You lost " + spikePenalty + "s!",
                		 x: player.x,
                		 y: player.y - 30,
                		 opacity: 1,
@@ -2999,7 +3300,8 @@ if (rewardMessage) {
             document.getElementById('tasksXP').textContent = savedGameData.pass.currentXP;
             const tasks = showingDailyTasks ? savedGameData.tasks.daily : savedGameData.tasks.weekly;
             const tasksList = document.getElementById('tasksList');
-            const rerollCost = showingDailyTasks ? 10 : 50;
+            let rerollCost = showingDailyTasks ? 10 : 50;
+            if (isPremiumSubActive()) rerollCost = Math.floor(rerollCost * 0.8);
             const now = Date.now();
 
 
@@ -3008,7 +3310,7 @@ if (rewardMessage) {
             document.getElementById('weeklyTab').style.background = !showingDailyTasks ? '#FFD700' : '';
 
             // Reset timer
-            let resetTime = showingDailyTasks ? savedGameData.tasks.dailyReset : savedGameData.global.previousLeaderboard;
+            let resetTime = showingDailyTasks ? savedGameData.tasks.dailyReset : savedGameData.tasks.weeklyReset;
             let timeLeft = Math.max(0, Math.floor((resetTime - now) / 1000));
             let hours = Math.floor(timeLeft / 3600);
             let mins = Math.floor((timeLeft % 3600) / 60);
@@ -3074,6 +3376,7 @@ if (rewardMessage) {
             if (!task.completed && task.progress >= task.goal) {
                 checkActiveBoosters();
                 const xpGained = Math.round(task.xp * savedGameData.activeBoosters.xp.multiplier);
+                if (isPremiumSubActive()) xpGained = Math.round(xpGained * 1.1);
                 savedGameData.player.totalXP += xpGained;
                 // Add XP to pass
                 savedGameData.pass.currentXP += xpGained;
@@ -3225,20 +3528,45 @@ if (rewardMessage) {
                     savedGameData.player.gold += reward.amount;
                     notificationMessage = `🪙 +${reward.amount} Coins claimed!`;
                     break;
-                case 'plai':
-                savedGameData.player.plai += reward.amount;
+                    case 'plai':
+                    if (payoutPLAI(reward.amount, 'jumpPassPool')) { // future: change to gameplayPool
                     notificationMessage = `💎 +${reward.amount} $PLAI claimed!`;
-                    break;
+                    } else {
+        // Not enough PLAI in the pool, convert to gold
+            const goldAmount = reward.amount * 50;
+            savedGameData.player.gold += goldAmount;
+            notificationMessage = `💎 PLAI pool is empty! You received ${goldAmount} Gold instead.`;
+            }
+            break;
                 case 'boost':
                     notificationMessage = `⚡ ${reward.amount} boost claimed! (${reward.duration})`;
                     activateBooster(reward.amount, reward.duration);
                     break;
-                case 'background':
-                    notificationMessage = `🎨 ${reward.amount} background unlocked!`;
-                    if (reward.itemId) {
-                        unlockItem(reward.itemId);
-                    }
-                    break;
+                    case 'background':
+    // Check if already owned
+    if (reward.itemId && savedGameData.player.userItems.unlocked.includes(reward.itemId)) {
+        // Already owned, give 10 PLAI (or gold if not enough in pool)
+        let plaiReward = 10;
+        if (payoutPLAI(plaiReward, 'jumpPassPool')) {
+            notificationMessage = `🎨 You already own this background! +${plaiReward} $PLAI instead!`;
+        } else {
+            // Not enough PLAI, convert to gold
+            const availablePLAI = savedGameData.global.ecosystemData.jumpPassPool;
+            if (availablePLAI > 0) {
+                // Pay out remaining PLAI, then convert the rest to gold
+                payoutPLAI(availablePLAI, 'jumpPassPool');
+            }
+            const goldReward = (plaiReward - availablePLAI) * 50;
+            savedGameData.player.gold += (availablePLAI * 50) + goldReward;
+            notificationMessage = `🎨 You already own this background! Pool empty: You received ${availablePLAI > 0 ? availablePLAI + " $PLAI and " : ""}${(availablePLAI * 50) + goldReward} Gold instead!`;
+        }
+    } else {
+        notificationMessage = `🎨 ${reward.amount} background unlocked!`;
+        if (reward.itemId) {
+            unlockItem(reward.itemId);
+        }
+    }
+    break;
                 case 'ticket':
                 savedGameData.player.tickets += reward.amount;
                     notificationMessage = `🎟️ +${reward.amount} Spin a Wheel Ticket(s) claimed!`;
@@ -3453,6 +3781,8 @@ if (rewardMessage) {
         updateProgressDisplay();
         updateStatsDisplay();
         generateRewards();
+        updateVaultSection();
+        document.getElementById('claimVaultTicketsBtn').onclick = claimVaultTickets;
     }
     </script>
 
@@ -3481,7 +3811,45 @@ if (rewardMessage) {
             updatePassStats();
             generateRewards();
         }
+        const maxLevel = Object.keys(gameData.rewards.basic).length;
+if (savedGameData.pass.currentLevel >= maxLevel) {
+    // Only count XP after max level
+    savedGameData.pass.vaultXP += savedGameData.pass.currentXP;
+    savedGameData.pass.currentXP = 0;
+}
+
     }
+
+
+function updateVaultSection() {
+    const tickets = getVaultTicketsEarned();
+    document.getElementById('vaultTicketsEarned').textContent =
+        `You have ${tickets} unclaimed ticket(s).`;
+    document.getElementById('claimVaultTicketsBtn').disabled = tickets === 0 || !savedGameData.pass.premiumUnlocked;}
+
+function getVaultTicketsEarned() {
+    return Math.floor((savedGameData.pass.vaultXP || 0) / 50) - (savedGameData.pass.vaultTicketsClaimed || 0);
+}
+
+
+
+function claimVaultTickets() {
+    if (!savedGameData.pass.premiumUnlocked) {
+        showRewardNotification("Premium Pass required to claim vault tickets!");
+        return;
+    }
+    const ticketsToClaim = getVaultTicketsEarned();
+    if (ticketsToClaim > 0) {
+        savedGameData.player.tickets += ticketsToClaim;
+        savedGameData.pass.vaultTicketsClaimed = (savedGameData.pass.vaultTicketsClaimed || 0) + ticketsToClaim;
+        showRewardNotification(`🎟️ Claimed ${ticketsToClaim} extra spin ticket(s)!`);
+        updateVaultSection();
+        saveAllData();
+    } else {
+        showRewardNotification("No tickets to claim yet!");
+    }
+}
+
     </script>
 
 
@@ -3617,6 +3985,7 @@ if (rewardMessage) {
                         div.onclick = () => {
                             if (savedGameData.player.gold >= item.price) {
                                 savedGameData.player.gold -= item.price;
+                                updateAllTasksProgress("spend_gold", item.price);
                                 unlockItem(item.id);
                                 // Automatically select the new item
                                 savedGameData.player.userItems.selected[type] = item.id; 
@@ -3775,30 +4144,28 @@ if (rewardMessage) {
     }
 
     function handlePrize(prize) {
-        let prizeMessage = '';
-        if (prize.type === 'nothing') {
-            prizeMessage = "💔 Better luck next time!";
-        } else if (prize.type === 'gold') {
-            savedGameData.player.gold += prize.amount;
-            prizeMessage = `🪙 You won ${prize.amount} Gold!`;
+    let prizeMessage = '';
+    if (prize.type === 'nothing') {
+        prizeMessage = "💔 Better luck next time!";
+    } else if (prize.type === 'gold') {
+        savedGameData.player.gold += prize.amount;
+        prizeMessage = `🪙 You won ${prize.amount} Gold!`;
+        updatePassBalances();
+    } else if (prize.type === 'plai') {
+        if (payoutPLAI(prize.amount, 'jumpPassPool')) {
+            prizeMessage = `💎 You won ${prize.amount} PLAI!`;
+            updateVaultScreen(); // Update pool display
             updatePassBalances();
-        } else if (prize.type === 'plai') {
-            if (savedGameData.global.ecosystemData.jumpPassPool >= prize.amount) {
-                savedGameData.global.ecosystemData.jumpPassPool -= prize.amount;
-                savedGameData.player.plai += prize.amount;
-                prizeMessage = `💎 You won ${prize.amount} PLAI!`;
-                updateVaultScreen(); // Update pool display
-                updatePassBalances();
-            } else {
-                const goldConversion = prize.amount * 50;
-                savedGameData.player.gold += goldConversion;
-                prizeMessage = `💎 PLAI pool is empty! You received ${goldConversion} Gold instead.`;
-                updatePassBalances();
-            }
+        } else {
+            const goldConversion = prize.amount * 50;
+            savedGameData.player.gold += goldConversion;
+            prizeMessage = `💎 PLAI pool is empty! You received ${goldConversion} Gold instead.`;
+            updatePassBalances();
         }
-        document.getElementById('lastPrizeDisplay').textContent = prizeMessage;
-        showRewardNotification(prizeMessage);
     }
+    document.getElementById('lastPrizeDisplay').textContent = prizeMessage;
+    showRewardNotification(prizeMessage);
+}
 
     function playAgain() {
         hideAllMenus();
@@ -3825,6 +4192,7 @@ if (rewardMessage) {
                        params: [{ chainId: '0x2105' }]
                    });
                    showRewardNotification("✅ Switched to Base network!");
+                   //showGoldRushResultOnLogin();
                } catch (switchError) {
                    showRewardNotification("❌ Please switch to Base network in MetaMask.");
                    return;
@@ -3924,6 +4292,7 @@ if (rewardMessage) {
 
     <script>
     async function sendPLAI(amount) {
+
         if (!window.ethereum || !savedGameData.player.wallet) {
             showRewardNotification("❌ Connect your wallet first.");
             return false;
@@ -3971,16 +4340,296 @@ if (rewardMessage) {
             return false;
         }
     }
-    </script>
 
-    <script>
-    if (window.ethereum) {
+
+
+function renderEventsList() {
+    const eventsList = document.getElementById('eventsList');
+    eventsList.innerHTML = ''; // Clear previous
+
+    // Gold Rush event info
+    const now = new Date();
+    const firstOfMonth = new Date(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0);
+    const goldRushStart = firstOfMonth.getTime();
+    const goldRushEnd = goldRushStart + 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    let eventStatus, timeLeft;
+    if (now.getTime() < goldRushStart) {
+        eventStatus = "Starts in";
+        timeLeft = goldRushStart - now.getTime();
+    } else if (now.getTime() < goldRushEnd) {
+        eventStatus = "Ends in";
+        timeLeft = goldRushEnd - now.getTime();
+    } else {
+        // Next month
+        const nextMonth = new Date(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0);
+        eventStatus = "Starts in";
+        timeLeft = nextMonth.getTime() - now.getTime();
+    }
+
+    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    const secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+    // Gold Rush event box
+    const goldRushBox = document.createElement('div');
+    goldRushBox.className = 'event-box';
+    goldRushBox.onmouseover = () => goldRushBox.style.boxShadow = '0 4px 16px #FFD70055';
+    goldRushBox.onmouseout = () => goldRushBox.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+    goldRushBox.onclick = () => {
+        openGoldRush();
+        document.getElementById('eventsMenu').style.display = 'none';
+    };
+
+    goldRushBox.innerHTML = `
+        <h3>🌟 Gold Rush</h3>
+        <p>Deposit coins for a chance to win a PLAI mystery box!<br>
+        The more you deposit, the higher your chance to win.</p>
+        <div style="font-weight:bold; color:#FFD700; margin:10px 0;">
+            ${eventStatus}: ${days}d ${hours}h ${mins}m ${secs}s
+        </div>
+        <div style="font-size:0.95em; color:#aaa;">
+            Runs every first week of the month.
+        </div>
+    `;
+
+    eventsList.appendChild(goldRushBox);
+}
+
+let eventsMenuInterval = null;
+function openEventsMenu() {
+    hideAllMenus();
+    document.getElementById('eventsMenu').style.display = 'block';
+    renderEventsList();
+    if (eventsMenuInterval) clearInterval(eventsMenuInterval);
+    eventsMenuInterval = setInterval(renderEventsList, 1000);
+}
+function closeEventsMenu() {
+    if (eventsMenuInterval) clearInterval(eventsMenuInterval);
+    document.getElementById('eventsMenu').style.display = 'none';
+}
+
+function getGoldRushWindow(now = Date.now()) {
+    const date = new Date(now);
+    const year = date.getUTCFullYear();
+    const month = date.getUTCMonth();
+    const start = Date.UTC(year, month, 1, 0, 0, 0, 0);
+    const end = start + 7 * 24 * 60 * 60 * 1000; // 7 days
+    return { start, end };
+}
+
+function isGoldRushActive() {
+    const now = Date.now();
+    const { start, end } = getGoldRushWindow(now);
+     return now >= start && now < end;
+
+}
+
+function isGoldRushDrawn() {
+    const now = Date.now();
+    const { end } = getGoldRushWindow(now);
+    return now >= end;
+}
+
+function depositGoldRush() {
+    if (!isGoldRushActive()) {
+        showRewardNotification("Gold Rush is not active!");
+        return;
+    }
+    const input = document.getElementById('goldRushDepositInput');
+    let amount = parseInt(input.value, 10);
+    if (isNaN(amount) || amount <= 0) {
+        showRewardNotification("Enter a valid amount!");
+        return;
+    }
+    const maxDeposit = 10000 - savedGameData.player.goldRush.deposited;
+    amount = Math.min(amount, maxDeposit);
+    if (savedGameData.player.gold < amount) {
+        showRewardNotification("Not enough gold!");
+        return;
+    }
+    savedGameData.player.gold -= amount;
+    savedGameData.player.goldRush.deposited += amount;
+    saveAllData();
+    renderGoldRush();
+    showRewardNotification(`Deposited ${amount} gold!`);
+}
+
+function processGoldRushDraw() {
+    const now = Date.now();
+    const { end } = getGoldRushWindow(now);
+
+    // Only process if event ended, not already drawn for this round, and user participated
+    if (now >= end && savedGameData.player.goldRush.lastDraw !== end && savedGameData.player.goldRush.deposited > 0) {
+        // Calculate win chance (max 90%)
+        const chance = Math.min(0.9, savedGameData.player.goldRush.deposited / 10000 * 0.9);
+        const won = Math.random() < chance;
+
+        let prize = null, refunded = false;
+        if (won) {
+            // Prize tiers
+            const prizes = [
+                { amount: 1, chance: 0.35 },
+                { amount: 2, chance: 0.25 },
+                { amount: 5, chance: 0.15 },
+                { amount: 7, chance: 0.10 },
+                { amount: 10, chance: 0.08 },
+                { amount: 15, chance: 0.05 },
+                { amount: 20, chance: 0.02 }
+            ];
+            let rand = Math.random();
+            let cumulative = 0;
+            for (let p of prizes) {
+                cumulative += p.chance;
+                if (rand < cumulative) {
+                    prize = p.amount;
+                    break;
+                }
+            }
+            // Check if enough PLAI in pool
+            if (payoutPLAI(prize, 'jumpPassPool')) {
+                refunded = false;
+            } else {
+                // Not enough PLAI, refund gold
+                savedGameData.player.gold += savedGameData.player.goldRush.deposited;
+                prize = null;
+                refunded = true;
+            }
+        } else {
+            prize = null;
+            refunded = false;
+        }
+        savedGameData.player.goldRush.result = { won, prize, refunded };
+        savedGameData.player.goldRush.lastDraw = end;
+        savedGameData.player.goldRush.hasClaimed = false;
+        saveAllData();
+    }
+}
+
+function checkGoldRushResult() {
+    processGoldRushDraw();
+    const res = savedGameData.player.goldRush.result;
+    if (isGoldRushDrawn() && res && !savedGameData.player.goldRush.hasClaimed) {
+        let msg;
+        if (res.refunded) {
+            msg = `Gold Rush: Not enough PLAI in the pool. Your ${savedGameData.player.goldRush.deposited} gold was refunded.`;
+        } else if (res.won && res.prize) {
+            msg = `🎉 Gold Rush: You won ${res.prize} $PLAI!`;
+        } else {
+            msg = `Gold Rush: You didn't win this time. Try again next month!`;
+        }
+        showRewardNotification(msg);
+        savedGameData.player.goldRush.hasClaimed = true;
+        // Reset for next event
+        savedGameData.player.goldRush.deposited = 0;
+        saveAllData();
+    }
+}
+
+function showGoldRushResultOnLogin() {
+    processGoldRushDraw();
+    const res = savedGameData.player.goldRush.result;
+    const now = Date.now();
+    const { end } = getGoldRushWindow(now);
+
+    // Only show if: event is over, result exists, not seen yet for this draw, and user participated
+    if (
+        isGoldRushDrawn() &&
+        res &&
+        savedGameData.player.goldRush.lastDraw === end &&
+        savedGameData.player.goldRushResultSeen !== end
+    ) {
+        let msg;
+        if (res.refunded) {
+            msg = `Gold Rush: Not enough PLAI in the pool. Your gold was refunded.`;
+        } else if (res.won && res.prize) {
+            msg = `🎉 Gold Rush: You won ${res.prize} $PLAI!`;
+        } else {
+            msg = `Gold Rush: You didn't win this time. Try again next month!`;
+        }
+        showRewardNotification(msg);
+        savedGameData.player.goldRushResultSeen = end;
+        savedGameData.player.goldRush.deposited = 0;
+        savedGameData.player.goldRush.hasClaimed = true;
+        saveAllData();
+    }
+}
+
+/**
+ * Payout PLAI to the user from a specific pool. function that will be used to contact the smart contract to pay out PLAI.
+ * Pays out PLAI to the user from a specific pool.
+ * @param {number} amount - Amount of PLAI to pay out.
+ * @param {string} pool - Pool name, e.g. 'jumpPassPool'
+ * @returns {boolean} - True if payout succeeded, false if not enough in pool.
+ */
+ function payoutPLAI(amount, pool) {
+    if (savedGameData.global.ecosystemData[pool] >= amount) {
+        savedGameData.global.ecosystemData[pool] -= amount;
+        savedGameData.player.plai += amount;
+        // In the future, call smart contract payout here!
+        saveAllData();
+        return true;
+    }
+    // Not enough in pool
+    return false;
+}
+
+function repairCorruptedGameData() {
+    let changed = false;
+
+    // 1. Fix leaderboard arrays
+    if (!Array.isArray(savedGameData.global.leaderboard)) {
+        savedGameData.global.leaderboard = [];
+        changed = true;
+    }
+    if (!Array.isArray(savedGameData.global.previousLeaderboard)) {
+        savedGameData.global.previousLeaderboard = [];
+        changed = true;
+    }
+
+    // 2. Fix leaderboard reset timestamp
+    if (typeof savedGameData.global.leaderboardReset !== 'number' || isNaN(savedGameData.global.leaderboardReset)) {
+        // Set to next Sunday UTC
+        savedGameData.global.leaderboardReset = getNextLeaderboardResetUTC ? getNextLeaderboardResetUTC() : Date.now() + 7*24*60*60*1000;
+        changed = true;
+    }
+
+    // 3. Fix tasks arrays
+    if (!Array.isArray(savedGameData.tasks.daily)) {
+        savedGameData.tasks.daily = [];
+        changed = true;
+    }
+    if (!Array.isArray(savedGameData.tasks.weekly)) {
+        savedGameData.tasks.weekly = [];
+        changed = true;
+    }
+
+    // 4. Fix task reset timestamps
+    if (typeof savedGameData.tasks.dailyReset !== 'number' || isNaN(savedGameData.tasks.dailyReset)) {
+        savedGameData.tasks.dailyReset = getNextDailyResetUTC ? getNextDailyResetUTC() : Date.now() + 24*60*60*1000;
+        changed = true;
+    }
+    if (typeof savedGameData.tasks.weeklyReset !== 'number' || isNaN(savedGameData.tasks.weeklyReset)) {
+        savedGameData.tasks.weeklyReset = getNextWeeklyResetUTC ? getNextWeeklyResetUTC() : Date.now() + 7*24*60*60*1000;
+        changed = true;
+    }
+
+    // 5. Save if anything was fixed
+    if (changed) {
+        saveAllData && saveAllData();
+        console.log("Corrupted game data repaired.");
+    }
+}
+
+if (window.ethereum) {
         window.ethereum.on('chainChanged', (chainId) => {
             if (chainId !== '0x2105') {
                 showRewardNotification("⚠️ Please switch to Base network to play!");
             }
         });
     }
+    
     </script>
     </body>
 </html>
