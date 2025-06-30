@@ -1517,7 +1517,8 @@ const DEFAULT_SAVED_GAME_DATA = {
             premium: []
         },
         vaultXP: 0,
-        vaultTicketsClaimed: 0
+        vaultTicketsClaimed: 0,
+        lastResetMonth: null
     },
     activeBoosters: {
         xp: { multiplier: 1, expires: 0 },
@@ -3804,7 +3805,27 @@ if (rewardMessage) {
         document.getElementById('coin-balance').textContent = savedGameData.player.gold.toLocaleString();
         document.getElementById('plai-balance').textContent = savedGameData.player.plai.toLocaleString(); // No decimals
     }
+
+    function resetJumpPass() {
+    savedGameData.pass.currentLevel = 1;
+    savedGameData.pass.currentXP = 0;
+    savedGameData.pass.xpToNext = getXPForLevel(1);
+    savedGameData.pass.premiumUnlocked = false;
+    savedGameData.pass.claimedRewards = { basic: [], premium: [] };
+    savedGameData.pass.vaultXP = 0;
+    savedGameData.pass.vaultTicketsClaimed = 0;
+    // Store the current month and year as last reset
+    const now = new Date();
+    savedGameData.pass.lastResetMonth = now.getUTCFullYear() + '-' + now.getUTCMonth();
+    saveAllData();
+}
+
     function openJumpPass() {
+        const now = new Date();
+        const currentMonthKey = now.getUTCFullYear() + '-' + now.getUTCMonth();
+        if (savedGameData.pass.lastResetMonth !== currentMonthKey) {
+        resetJumpPass();
+        }
         updatePassStats();
         hideAllMenus();
         document.getElementById('jumpPassMenu').style.display = 'block';
