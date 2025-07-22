@@ -1046,8 +1046,7 @@
                         <div class="stat-label">Total Rewards</div>
                     </div>
                 </div>
-                <!-- TODO: change the display none to block -->
-                <div class="vault-section" id="vaultSection" style="margin-top: 30px;display:none; background: rgba(0,0,0,0.2); border-radius: 15px; padding: 20px;">
+                <div class="vault-section" id="vaultSection" style="margin-top: 30px;display:block; background: rgba(0,0,0,0.2); border-radius: 15px; padding: 20px;">
                     <h2 style="color:#FFD700;">🎁 Vault Bonus</h2>
                     <p>For every <b>50 XP</b> you collect after reaching the final pass level as premium member, you earn <b>1 extra spin ticket</b>!</p>
                     <p id="vaultTicketsEarned" style="font-size:1.2em; color:#00FFAA;"></p>
@@ -1183,10 +1182,10 @@
                         <div class="shop-item-desc">
                             <ul style="text-align:left; margin:0 0 0 1em; color:#FFD700;">
                                 <li>+10% XP from tasks</li>
-                                <li>3 free spin tickets (once per sub)</li>
-                                <li>Spikes only -15s instead of -20s</li>
+                                <li>3 free spin tickets (per buy)</li>
+                                <li>Spikes only -15s</li>
                                 <li>Task reroll price -20%</li>
-                                <li>+1 extra daily task slot (4 total)</li>
+                                <li>+1 daily task slot (4 total)</li>
                             </ul>
                         </div>
                     </div>
@@ -1344,6 +1343,22 @@
   <div class="info-section">
     <h3>📝 Latest game updates</h3>
     <p>
+        07/22/2025:
+        - Diffrent bug fixes (espeically with the weekly tasks)
+        - Diffrent new skins added, this is still in the test phase and will be added to the shop later.
+        - Added a new premium subscription, currently not available yet.
+        - A new feature has been added, this is not yet available as it isn't time yet.
+        - Reaching the end of the monthly pass will now give you the chance to collect extra spin tickets.
+    Current plans:
+        -Reworking the pass to change all the skins into "skin tokens" wich can be used to buy skins or exchange for gold.
+        - Database integration for all the player data, also for the leaderboard. This will secure the data and lower the bugs with the leaderboard.
+        - Smart contract for $PLAI distribution is challenging, its possible I will first add a manual payout system.
+        - Plans to have a daily login reward system.
+        - More bug fixes and improvements for the game are planned.
+
+        For any further feedback pls fill in the form!
+
+        07/01/2025
       We have released the first version from the game for open beta testing. Currently we are gathering feedback to improve the game and have already future plans.
     </p>
   </div>
@@ -1470,15 +1485,18 @@ const DEFAULT_SAVED_GAME_DATA = {
             magnetPowerUnlocked: false,
             giftSpeedLevel: 0,
             giftSpeedMaxLevel: 5,
-            jumpMaxLevel: 10,
-            premiumSub: {
-                active: false,
-                expires: 0,
-                freeTicketsClaimed: false
-            }
+            jumpMaxLevel: 10,            
         },
+        premiumSub: {
+            active: false,
+            expires: 0,
+            freeTicketsClaimed: false
+            },
         userItems: {
-            unlocked: ['skin_red', 'bg_default', 'fx_none'],
+            unlocked: [
+                'skin_red', 'bg_default', 'fx_none',
+                'skin_buildingcat', 'skin_zombie', 'skin_chocolate', 'skin_bear'
+            ],
             selected: { skin: 'skin_red', background: 'bg_default', effect: 'fx_none' }
         },
         goldRush: {
@@ -1526,6 +1544,32 @@ const DEFAULT_SAVED_GAME_DATA = {
     },
 
 };
+
+    // Master list of all unlockable items
+    const ALL_ITEMS = [
+      // Skins (from old avatar system, now in skins menu)
+      { id: 'skin_red', type: 'skin', name: 'Classic Red', color: '#FF6B6B', source: 'shop', price: 0 },
+      { id: 'skin_cyan', type: 'skin', name: 'Aqua Cyan', color: '#4ECDC4', source: 'shop', price: 250 },
+      { id: 'skin_blue', type: 'skin', name: 'Sky Blue', color: '#45B7D1', source: 'shop', price: 250 },
+      { id: 'skin_green', type: 'skin', name: 'Lime Green', color: '#96E6A1', source: 'shop', price: 250 },
+      { id: 'skin_city', type: 'skin', name: 'city building', image: 'images/skin_city.png', source: 'test', price: 0 },
+      { id: 'skin_zombie', type: 'skin', name: 'zombie', image: 'images/skin_zombie.png', source: 'shop', price: 1 },
+      { id: 'skin_chocolate', type: 'skin', name: 'chocolate', image: 'images/skin_chocolate.png', source: 'test', price: 0 },
+      { id: 'skin_bear', type: 'skin', name: 'bear', image: 'images/skin_bear.png', source: 'test', price: 0 },
+
+      // Backgrounds
+      { id: 'bg_default', type: 'background', name: 'Default Sky', gradient: 'linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #32CD32 70%, #228B22 100%)', source: 'default' },
+      { id: 'bg_ocean', type: 'background', name: 'Ocean Theme', gradient: 'linear-gradient(to bottom, #00BFFF, #1E90FF 70%, #008080 70%, #005A5A 100%)', source: 'pass' },
+      { id: 'bg_space', type: 'background', name: 'Space Theme', gradient: 'linear-gradient(to bottom, #0c0a1a, #2a2a4a 70%, #1a1a2a 70%, #000 100%)', source: 'pass' },
+      { id: 'bg_forest', type: 'background', name: 'Forest Theme', gradient: 'linear-gradient(to bottom, #228B22, #556B2F 70%, #3B2A0A 70%, #211703 100%)', source: 'pass' },
+      { id: 'bg_neon', type: 'background', name: 'Neon Theme', gradient: 'linear-gradient(to bottom, #ff00cc, #333399 70%, #1a1a1a 70%, #000 100%)', source: 'pass' },
+      { id: 'bg_crystal', type: 'background', name: 'Crystal Theme', gradient: 'linear-gradient(to bottom, #B0E0E6, #ADD8E6 70%, #708090 70%, #465058 100%)', source: 'pass' },
+      
+      // Effects
+      { id: 'fx_none', type: 'effect', name: 'None', source: 'default' },
+      { id: 'fx_sparkle', type: 'effect', name: 'Sparkle Trail', source: 'pass' }, // Example, not yet unlockable
+    ];
+    
 /*
 let savedGameData = {
     player: {
@@ -1829,12 +1873,15 @@ const TASK_POOL = [
             return now.getTime() + 24*60*60*1000; // next midnight UTC
         }
         function getNextWeeklyResetUTC() {
-            const now = new Date();
-            // Set to next Sunday 00:00 UTC
-            const day = now.getUTCDay();
-            const daysUntilSunday = (7 - day) % 7;
-            now.setUTCHours(0,0,0,0);
-            return now.getTime() + daysUntilSunday*24*60*60*1000;
+        const now = new Date();
+        now.setUTCHours(0,0,0,0); // Today at 00:00 UTC
+        let day = now.getUTCDay();
+        let daysUntilNextSunday = (7 - day) % 7;
+        if (daysUntilNextSunday === 0) {
+            // If today is Sunday, set to next Sunday
+            daysUntilNextSunday = 7;
+        }
+        return now.getTime() + daysUntilNextSunday * 24 * 60 * 60 * 1000;
         }
 
         function getRandomTask(isDaily, excludeTypes=[]) {
@@ -1872,20 +1919,41 @@ const TASK_POOL = [
 
 
         function resetTasksIfNeeded() {
-            const now = Date.now();
-            let changed = false;
-            if (!savedGameData.tasks.dailyReset || now > savedGameData.tasks.dailyReset) {
-                savedGameData.tasks.daily= generateTasks(true);
-                savedGameData.tasks.dailyReset = getNextDailyResetUTC();
-                changed = true;
-             }
-            if (!savedGameData.tasks.weeklyReset || now > savedGameData.tasks.weeklyReset) {
-                savedGameData.tasks.weekly = generateTasks(false);
-                savedGameData.tasks.weeklyReset = getNextWeeklyResetUTC();
-                changed = true;
+    const now = Date.now();
+    let changed = false;
 
-            }
-        }
+    // Only increment if a reset is actually needed
+    if (!savedGameData.tasks.weeklyReset || now > savedGameData.tasks.weeklyReset) {
+        weeklyResetLoopCount++;
+    } else {
+        weeklyResetLoopCount = 0; // Reset the loop count if no reset is needed
+    }
+
+    if (weeklyResetLoopCount > 10) {
+        console.warn("Weekly task reset loop detected! Forcing hard reset.");
+        savedGameData.tasks.weeklyReset = getNextWeeklyResetUTC();
+        savedGameData.tasks.weekly = generateTasks(false);
+        saveAllData();
+        weeklyResetLoopCount = 0;
+        return;
+    }
+
+    if (!savedGameData.tasks.dailyReset || now > savedGameData.tasks.dailyReset) {
+        savedGameData.tasks.daily = generateTasks(true);
+        savedGameData.tasks.dailyReset = getNextDailyResetUTC();
+        changed = true;
+    }
+    if (!savedGameData.tasks.weeklyReset || now > savedGameData.tasks.weeklyReset) {
+        savedGameData.tasks.weekly = generateTasks(false);
+        savedGameData.tasks.weeklyReset = getNextWeeklyResetUTC();
+        changed = true;
+        weeklyResetLoopCount = 0; // Reset the loop count after a successful weekly reset
+    }
+
+    if (changed) {
+        saveAllData();
+    }
+}
 
         function getNextLeaderboardResetUTC() {
         const now = new Date();
@@ -1984,6 +2052,23 @@ const TASK_POOL = [
         changed = true;
     }
 
+        // Fix weekly tasks array
+        if (!Array.isArray(savedGameData.tasks.weekly)) {
+        savedGameData.tasks.weekly = [];
+        changed = true;
+    }
+
+    // Fix weekly reset timestamp
+    if (
+        typeof savedGameData.tasks.weeklyReset !== 'number' ||
+        isNaN(savedGameData.tasks.weeklyReset) ||
+        savedGameData.tasks.weeklyReset < Date.now() // If in the past, force new reset
+    ) {
+        savedGameData.tasks.weeklyReset = getNextWeeklyResetUTC();
+        savedGameData.tasks.weekly = generateTasks(false); // Generate new weekly tasks
+        changed = true;
+    }
+
     // 5. Save if anything was fixed
     if (changed) {
         saveAllData && saveAllData();
@@ -1993,8 +2078,19 @@ const TASK_POOL = [
 
         // Call this once at game start:
         repairCorruptedGameData();
+        let weeklyResetLoopCount = 0;
         resetTasksIfNeeded();
         resetLeaderboardIfNeeded()
+        const imageCache = {};
+        // Preload images   
+    function preloadImage(src) {
+    if (!imageCache[src]) {
+        const img = new Image();
+        img.src = src;
+        imageCache[src] = img;
+    }
+    return imageCache[src];
+    }
 
         
         // Power-ups
@@ -2344,6 +2440,9 @@ function updateVaultScreen() {
 function openGoldRush() {
    if (!isGoldRushActive()) {
        showRewardNotification("Gold Rush is not active right now. Please come back during the first week of the month!");
+       setTimeout(() => {
+           openEventsMenu();
+       }, 1000);
        return;
    }
    // Only hide menus and show the event if active
@@ -2537,7 +2636,7 @@ if (isPremiumSubActive()) {
                 if (savedGameData.player.gold >= cost) {
                     savedGameData.player.gold -= cost;
                     savedGameData.player.upgrades.jumpLevel++;
-                    updateAllTasksProgress("spend_gold", amountSpent);
+                    updateAllTasksProgress("spend_gold", cost);
                     updateShopScreen();
                 }
             } else if (type === 'time') {
@@ -2545,7 +2644,7 @@ if (isPremiumSubActive()) {
                 if (savedGameData.player.gold >= cost) {
                     savedGameData.player.gold -= cost;
                     savedGameData.player.upgrades.timeLevel++;
-                    updateAllTasksProgress("spend_gold", amountSpent);
+                    updateAllTasksProgress("spend_gold", cost);
                     updateShopScreen();
                 }
             }
@@ -2570,7 +2669,7 @@ if (isPremiumSubActive()) {
         }
     } else if (type === 'giftSpeed' && savedGameData.player.upgrades.giftSpeedLevel < savedGameData.player.upgrades.giftSpeedMaxLevel) {
     const cost = Math.floor(500 * Math.pow(1.5, savedGameData.player.upgrades.giftSpeedLevel));
-    if (awaitsendPLAI(cost)) {
+    if (await sendPLAI(cost)) {
         savedGameData.player.upgrades.giftSpeedLevel++;
         updateShopScreen();
     		}
@@ -3011,8 +3110,20 @@ async function buyPremiumSub() {
             if (gameState === STATES.PLAYING) {
                 // Draw player
                 const selectedSkin = ALL_ITEMS.find(i => i.id === savedGameData.player.userItems.selected.skin);
-                ctx.fillStyle = selectedSkin ? selectedSkin.color : '#FF6B6B'; // Fallback color
-                ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            if (selectedSkin && selectedSkin.image) {
+                const img = preloadImage(selectedSkin.image);
+            if (img.complete) {
+                ctx.drawImage(img, player.x, player.y, player.width, player.height);
+            } else {
+            // Optionally, draw a placeholder or fallback color while loading
+            ctx.fillStyle = selectedSkin.color || '#FF6B6B';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+            } else {
+            ctx.fillStyle = selectedSkin ? selectedSkin.color : '#FF6B6B';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
                 
                 // Player face
                 ctx.fillStyle = 'white';
@@ -3312,11 +3423,18 @@ if (rewardMessage) {
 
         function applySelectedBackground() {
             const selectedBg = ALL_ITEMS.find(i => i.id === savedGameData.player.userItems.selected.background);
-            if (selectedBg && selectedBg.gradient) {
-                canvas.style.background = selectedBg.gradient;
-            } else {
-                // Fallback to default
-                canvas.style.background = 'linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #32CD32 70%, #228B22 100%)';
+            if (selectedBg) {
+                if (selectedBg.image) {
+                    // Use image as background
+                    canvas.style.background = `url('${selectedBg.image}') center center / cover no-repeat`;
+                } else if (selectedBg.gradient) {
+                    canvas.style.background = selectedBg.gradient;
+                } else if (selectedBg.color) {
+                    canvas.style.background = selectedBg.color;
+                } else {
+                    // Fallback
+                    canvas.style.background = 'linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #32CD32 70%, #228B22 100%)';
+                }
             }
         }
 
@@ -3944,28 +4062,6 @@ function claimVaultTickets() {
     </div>
 
     <script>
-    // Master list of all unlockable items
-    const ALL_ITEMS = [
-      // Skins (from old avatar system, now in skins menu)
-      { id: 'skin_red', type: 'skin', name: 'Classic Red', color: '#FF6B6B', source: 'shop', price: 0 },
-      { id: 'skin_cyan', type: 'skin', name: 'Aqua Cyan', color: '#4ECDC4', source: 'shop', price: 250 },
-      { id: 'skin_blue', type: 'skin', name: 'Sky Blue', color: '#45B7D1', source: 'shop', price: 250 },
-      { id: 'skin_green', type: 'skin', name: 'Lime Green', color: '#96E6A1', source: 'shop', price: 250 },
-
-      // Backgrounds
-      { id: 'bg_default', type: 'background', name: 'Default Sky', gradient: 'linear-gradient(to bottom, #87CEEB 0%, #87CEEB 70%, #32CD32 70%, #228B22 100%)', source: 'default' },
-      { id: 'bg_ocean', type: 'background', name: 'Ocean Theme', gradient: 'linear-gradient(to bottom, #00BFFF, #1E90FF 70%, #008080 70%, #005A5A 100%)', source: 'pass' },
-      { id: 'bg_space', type: 'background', name: 'Space Theme', gradient: 'linear-gradient(to bottom, #0c0a1a, #2a2a4a 70%, #1a1a2a 70%, #000 100%)', source: 'pass' },
-      { id: 'bg_forest', type: 'background', name: 'Forest Theme', gradient: 'linear-gradient(to bottom, #228B22, #556B2F 70%, #3B2A0A 70%, #211703 100%)', source: 'pass' },
-      { id: 'bg_neon', type: 'background', name: 'Neon Theme', gradient: 'linear-gradient(to bottom, #ff00cc, #333399 70%, #1a1a1a 70%, #000 100%)', source: 'pass' },
-      { id: 'bg_crystal', type: 'background', name: 'Crystal Theme', gradient: 'linear-gradient(to bottom, #B0E0E6, #ADD8E6 70%, #708090 70%, #465058 100%)', source: 'pass' },
-      
-      // Effects
-      { id: 'fx_none', type: 'effect', name: 'None', source: 'default' },
-      { id: 'fx_sparkle', type: 'effect', name: 'Sparkle Trail', source: 'pass' }, // Example, not yet unlockable
-    ];
-
-
 
 
     function openSkins() {
@@ -4001,7 +4097,11 @@ function claimVaultTickets() {
                 const div = document.createElement('div');
                 div.style.width = '80px';
                 div.style.height = '80px';
+                if (item.image) {
+                div.style.background = `url('${item.image}') center center / cover no-repeat`;
+                } else {
                 div.style.background = item.gradient || item.color || '#ccc';
+                }
                 div.style.borderRadius = '10px';
                 div.style.border = '2px solid #555';
                 div.style.display = 'flex';
@@ -4265,7 +4365,7 @@ function claimVaultTickets() {
                        params: [{ chainId: '0x2105' }]
                    });
                    showRewardNotification("✅ Switched to Base network!");
-                   //showGoldRushResultOnLogin();
+                   showGoldRushResultOnLogin();
                } catch (switchError) {
                    showRewardNotification("❌ Please switch to Base network in MetaMask.");
                    return;
@@ -4524,6 +4624,7 @@ function depositGoldRush() {
     }
     savedGameData.player.gold -= amount;
     savedGameData.player.goldRush.deposited += amount;
+    updateAllTasksProgress("spend_gold", amount);
     saveAllData();
     renderGoldRush();
     showRewardNotification(`Deposited ${amount} gold!`);
